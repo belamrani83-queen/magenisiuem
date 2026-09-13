@@ -23,9 +23,16 @@ import {
   AlertCircle,
   DollarSign,
   TrendingUp,
-  ChevronDown
+  Percent,
+  Calculator,
+  Wallet,
+  Coins,
+  PackageX,
+  ArrowUpRight,
+  HelpCircle,
+  Save
 } from 'lucide-react';
-import { OrderRecord, OrderStatus } from '../types';
+import { OrderRecord, OrderStatus, CodUnitCosts } from '../types';
 
 interface AdminDashboardModalProps {
   isOpen: boolean;
@@ -66,15 +73,31 @@ const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
   }
 }`;
 
+const DEFAULT_COD_COSTS: CodUnitCosts = {
+  productUnitCost: 45,       // تكلفة شراء/صنع العلبة
+  shippingCostDelivered: 35, // مصاريف الشحن للطلبات المستلمة
+  shippingCostReturned: 15,  // مصاريف الروتور عند الرفض أو الإلغاء بعد الشحن
+  confirmationCallCost: 5,   // تكلفة المكالمة والتأكيد لكل طلب
+  packagingCost: 4,          // كرتونة وتعليب
+  adSpendPerLead: 25,        // تكلفة الإشهار لكل ليد مسجل (CPL في فيسبوك/تيك توك)
+};
+
 export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen, onClose }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('cod_admin_auth') === 'true';
+  });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'orders' | 'sheets' | 'new-order'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'cod-analytics' | 'sheets' | 'new-order'>('orders');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // COD Costs and Expenses State
+  const [codCosts, setCodCosts] = useState<CodUnitCosts>(DEFAULT_COD_COSTS);
+  const [isSavingCosts, setIsSavingCosts] = useState(false);
+  const [costsSavedNotice, setCostsSavedNotice] = useState(false);
 
   // Google Sheets settings state
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -111,6 +134,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
       const data = await res.json();
       if (data.valid || pinInput === '1234') {
         setIsAuthenticated(true);
+        localStorage.setItem('cod_admin_auth', 'true');
         setPinError('');
         loadOrders();
         loadSettings();
@@ -120,11 +144,18 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     } catch (err) {
       if (pinInput === '1234') {
         setIsAuthenticated(true);
+        localStorage.setItem('cod_admin_auth', 'true');
         loadOrders();
       } else {
         setPinError('رمز غير صحيح');
       }
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('cod_admin_auth');
+    setIsAuthenticated(false);
+    setPinInput('');
   };
 
   const loadOrders = async () => {
@@ -146,8 +177,20 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     try {
       const res = await fetch('/api/admin/settings');
       const data = await res.json();
-      if (data.success && data.googleSheetsWebhookUrl) {
-        setWebhookUrl(data.googleSheetsWebhookUrl);
+      if (data.success) {
+        if (data.googleSheetsWebhookUrl) {
+          setWebhookUrl(data.googleSheetsWebhookUrl);
+        }
+        if (data.codCosts) {
+          setCodCosts({
+            productUnitCost: data.codCosts.productUnitCost ?? DEFAULT_COD_COSTS.productUnitCost,
+            shippingCostDelivered: data.codCosts.shippingCostDelivered ?? DEFAULT_COD_COSTS.shippingCostDelivered,
+            shippingCostReturned: data.codCosts.shippingCostReturned ?? DEFAULT_COD_COSTS.shippingCostReturned,
+            confirmationCallCost: data.codCosts.confirmationCallCost ?? DEFAULT_COD_COSTS.confirmationCallCost,
+            packagingCost: data.codCosts.packagingCost ?? DEFAULT_COD_COSTS.packagingCost,
+            adSpendPerLead: data.codCosts.adSpendPerLead ?? DEFAULT_COD_COSTS.adSpendPerLead,
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to load settings', err);
@@ -161,9 +204,29 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     }
   }, [isOpen, isAuthenticated]);
 
+  const handleSaveCodCosts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCosts(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codCosts }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCostsSavedNotice(true);
+        setTimeout(() => setCostsSavedNotice(false), 3000);
+      }
+    } catch (err) {
+      alert('فشل حفظ إعدادات المصاريف');
+    } finally {
+      setIsSavingCosts(false);
+    }
+  };
+
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      // Optimistic update
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
@@ -274,7 +337,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     }
   };
 
-  // Export orders to Excel/Google Sheets compatible CSV
   const handleExportCSV = () => {
     if (orders.length === 0) {
       alert('لا توجد طلبات لتصديرها حالياً');
@@ -317,7 +379,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
       `"${(o.notes || '').replace(/"/g, '""')}"`,
     ]);
 
-    // UTF-8 BOM for Arabic support in Excel
     const csvContent =
       '\uFEFF' +
       [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
@@ -326,7 +387,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `طلبات_مكمل_المغنيسيوم_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `طلبات_COD_المغنيسيوم_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -338,15 +399,79 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     setTimeout(() => setCopiedCode(false), 2500);
   };
 
-  // Metrics
-  const totalOrdersCount = orders.length;
-  const newOrdersCount = orders.filter((o) => o.status === 'new').length;
-  const confirmedOrdersCount = orders.filter((o) => o.status === 'confirmed' || o.status === 'delivered' || o.status === 'shipped').length;
-  const totalRevenue = orders
-    .filter((o) => o.status === 'confirmed' || o.status === 'delivered')
-    .reduce((sum, o) => sum + (o.price || 0), 0);
+  // ==========================================
+  // COD FINANCIAL ANALYTICS & PROFIT METRICS
+  // ==========================================
+  const totalLeads = orders.length; // كل من عبأ الاستمارة
+  const newOrders = orders.filter((o) => o.status === 'new');
+  const confirmedOrders = orders.filter((o) => o.status === 'confirmed');
+  const shippedOrders = orders.filter((o) => o.status === 'shipped');
+  const deliveredOrders = orders.filter((o) => o.status === 'delivered');
+  const cancelledOrders = orders.filter((o) => o.status === 'cancelled');
 
-  // Filtered orders
+  // Rate of Confirmation (نسبة التأكيد)
+  const nonNewOrdersCount = orders.filter((o) => o.status !== 'new').length;
+  const processedConfirmedCount = confirmedOrders.length + shippedOrders.length + deliveredOrders.length;
+  const confirmationRate = totalLeads > 0 ? Math.round((processedConfirmedCount / totalLeads) * 100) : 0;
+
+  // Rate of Delivery (نسبة التوصيل من الطلبات التي تم شحنها وتوصيلها)
+  const shippedTotal = deliveredOrders.length + shippedOrders.length;
+  const deliveryRate = shippedTotal > 0 ? Math.round((deliveredOrders.length / shippedTotal) * 100) : (deliveredOrders.length > 0 ? 100 : 0);
+
+  // Revenue Realized (المداخيل المحصلة من التوصيل الفعلي + المتوقع تسليمها من قيد الشحن)
+  const realizedRevenue = deliveredOrders.reduce((acc, o) => acc + (o.price || 0), 0);
+  const inTransitRevenue = shippedOrders.reduce((acc, o) => acc + (o.price || 0), 0);
+  const potentialTotalRevenue = realizedRevenue + inTransitRevenue + confirmedOrders.reduce((acc, o) => acc + (o.price || 0), 0);
+
+  // Delivered product boxes count
+  const deliveredBoxesCount = deliveredOrders.reduce((acc, o) => acc + (o.quantity || (o.price > 300 ? 2 : 1)), 0);
+
+  // Total Costs Breakdown
+  // 1. تكلفة المنتج للطلبات المستلمة (Cost of Goods Sold)
+  const totalProductCost = deliveredBoxesCount * codCosts.productUnitCost;
+
+  // 2. مصاريف الشحن للطلبات المستلمة
+  const totalDeliveredShippingCost = deliveredOrders.length * codCosts.shippingCostDelivered;
+
+  // 3. مصاريف الروتور للطلبات الملغاة التي خرجت للشحن
+  // (نعتبر الملغي الذي له روتور أو نسبة تقديرية)
+  const returnedCount = cancelledOrders.length;
+  const totalReturnedShippingCost = returnedCount * codCosts.shippingCostReturned;
+
+  // 4. مصاريف التعليب والتغليف (كرتون، لاصق، هدايا)
+  const totalPackagingCost = (deliveredOrders.length + shippedOrders.length) * codCosts.packagingCost;
+
+  // 5. مصاريف التأكيد والمكالمات لجميع الليدات المعالجة
+  const totalCallCenterCost = totalLeads * codCosts.confirmationCallCost;
+
+  // 6. مصاريف الإعلانات المقدرة (Ad Spend = Leads * CPL)
+  const totalEstimatedAdSpend = totalLeads * codCosts.adSpendPerLead;
+
+  // Total All Expenses
+  const totalAllExpenses =
+    totalProductCost +
+    totalDeliveredShippingCost +
+    totalReturnedShippingCost +
+    totalPackagingCost +
+    totalCallCenterCost +
+    totalEstimatedAdSpend;
+
+  // NET PROFIT (صافي الربح الصافي في الجيب)
+  const netDeliveredProfit = realizedRevenue - (
+    totalProductCost +
+    totalDeliveredShippingCost +
+    totalReturnedShippingCost +
+    (deliveredOrders.length * codCosts.packagingCost) +
+    (deliveredOrders.length * codCosts.confirmationCallCost) +
+    (deliveredOrders.length * codCosts.adSpendPerLead)
+  );
+
+  // Full Business Net Profit (شامل كل تكاليف الإشهار والمكالمات حتى للطلبات غير المستلمة)
+  const overallNetProfit = realizedRevenue - totalAllExpenses;
+  const profitMarginPercent = realizedRevenue > 0 ? Math.round((overallNetProfit / realizedRevenue) * 100) : 0;
+  const avgProfitPerOrder = deliveredOrders.length > 0 ? Math.round(overallNetProfit / deliveredOrders.length) : 0;
+
+  // Filtered orders for table
   const filteredOrders = orders.filter((order) => {
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const q = searchQuery.toLowerCase();
@@ -364,35 +489,46 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-6xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[95vh] flex flex-col">
-        {/* Modal Top Header */}
+        {/* Top Header */}
         <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center font-black shadow-inner">
-              <Table className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center font-black shadow-inner">
+              <Calculator className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
-                <span>لوحة إدارة الطلبات & Google Sheets</span>
-                <span className="text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full">
-                  Magnesium Complex
+                <span>لوحة تحكم التجارة الإلكترونية (COD Dashboard)</span>
+                <span className="text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full">
+                  حساب المصاريف والربح الصافي
                 </span>
               </h3>
               <p className="text-xs text-slate-300">
-                متابعة الزبناء، تصدير الطلبات إلى Excel، والربط التلقائي مع شيت Google
+                تتبع الطلبيات، نسبة التوصيل (Delivery Rate)، حساب الروتور والإشهار والبروفيا بدقة
               </p>
             </div>
           </div>
 
-          <button
-            id="admin-close-btn"
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <button
+                onClick={handleLogout}
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-rose-500/20 text-slate-300 hover:text-rose-200 text-xs font-bold transition-colors cursor-pointer"
+                title="تسجيل الخروج"
+              >
+                خروج
+              </button>
+            )}
+            <button
+              id="admin-close-btn"
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Auth Check Screen */}
+        {/* Auth Screen */}
         {!isAuthenticated ? (
           <div className="p-8 sm:p-12 flex flex-col items-center justify-center text-center max-w-md mx-auto my-auto">
             <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mb-4 shadow-xs">
@@ -400,7 +536,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
             </div>
             <h4 className="text-xl font-black text-slate-900 mb-2">تسجيل الدخول للوحة التحكم</h4>
             <p className="text-xs sm:text-sm text-slate-600 mb-6">
-              المرجو إدخال رمز المرور الخاص بك لإدارة وتتبع طلبات الزبناء.
+              المرجو إدخال رمز المرور الخاص بك للاطلاع على الطلبات وحسابات الأرباح.
               <br />
               <span className="text-blue-600 font-bold mt-1 inline-block">الرمز الافتراضي: 1234</span>
             </p>
@@ -434,9 +570,9 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
         ) : (
           /* Authenticated Dashboard Body */
           <div className="flex-1 overflow-y-auto flex flex-col bg-slate-50">
-            {/* Top Sub-Navigation & Actions */}
+            {/* Top Navigation Bar */}
             <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              {/* Tabs */}
+              {/* Navigation Tabs */}
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button
                   onClick={() => setActiveTab('orders')}
@@ -448,6 +584,22 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 >
                   قائمة الطلبات ({orders.length})
                 </button>
+
+                <button
+                  onClick={() => setActiveTab('cod-analytics')}
+                  className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'cod-analytics'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Coins className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>حساب المصاريف والأرباح (COD)</span>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.2 rounded font-black">
+                    Profit
+                  </span>
+                </button>
+
                 <button
                   onClick={() => setActiveTab('sheets')}
                   className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -458,10 +610,9 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                   <span>ربط Google Sheets</span>
-                  {webhookUrl && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  )}
+                  {webhookUrl && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
                 </button>
+
                 <button
                   onClick={() => setActiveTab('new-order')}
                   className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
@@ -492,7 +643,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                   title="تنزيل ملف إكسل بجميع الطلبات"
                 >
                   <Download className="w-4 h-4" />
-                  <span>تصدير إلى Excel / Sheets (CSV)</span>
+                  <span>تصدير Excel (CSV)</span>
                 </button>
               </div>
             </div>
@@ -504,44 +655,43 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
                     <div className="flex items-center justify-between text-slate-500 mb-1">
-                      <span className="text-xs font-bold">إجمالي الطلبات</span>
+                      <span className="text-xs font-bold">إجمالي الطلبات (Leads)</span>
                       <Table className="w-4 h-4 text-blue-600" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-slate-900">{totalOrdersCount}</div>
-                    <span className="text-[10px] text-slate-400">جميع الطلبيات المسجلة</span>
+                    <div className="text-xl sm:text-2xl font-black text-slate-900">{totalLeads}</div>
+                    <span className="text-[10px] text-slate-400">من جميع الإعلانات والاستمارات</span>
                   </div>
 
                   <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-xs">
                     <div className="flex items-center justify-between text-amber-800 mb-1">
-                      <span className="text-xs font-black">طلبات جديدة</span>
+                      <span className="text-xs font-black">جديدة (Pending)</span>
                       <Clock className="w-4 h-4 text-amber-600" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-amber-900">{newOrdersCount}</div>
-                    <span className="text-[10px] text-amber-700">تحتاج اتصال وتأكيد</span>
-                  </div>
-
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-xs">
-                    <div className="flex items-center justify-between text-emerald-800 mb-1">
-                      <span className="text-xs font-black">مؤكدة / تم التوصيل</span>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div className="text-xl sm:text-2xl font-black text-emerald-900">{confirmedOrdersCount}</div>
-                    <span className="text-[10px] text-emerald-700">جاهزة للشحن والتوصيل</span>
+                    <div className="text-xl sm:text-2xl font-black text-amber-900">{newOrders.length}</div>
+                    <span className="text-[10px] text-amber-700">تحتاج اتصال فوري لتأكيد العنوان</span>
                   </div>
 
                   <div className="p-3.5 sm:p-4 rounded-2xl bg-blue-50/70 border border-blue-200 shadow-xs">
                     <div className="flex items-center justify-between text-blue-800 mb-1">
-                      <span className="text-xs font-black">مداخيل الطلبات</span>
-                      <DollarSign className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-black">قيد الشحن (Shipped)</span>
+                      <Truck className="w-4 h-4 text-blue-600" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-blue-900">{totalRevenue} DH</div>
-                    <span className="text-[10px] text-blue-700">من الطلبات المؤكدة</span>
+                    <div className="text-xl sm:text-2xl font-black text-blue-900">{shippedOrders.length}</div>
+                    <span className="text-[10px] text-blue-700">مع موزع التوصيل (Livreur)</span>
+                  </div>
+
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-xs">
+                    <div className="flex items-center justify-between text-emerald-800 mb-1">
+                      <span className="text-xs font-black">تم التوصيل (Livré)</span>
+                      <PackageCheck className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="text-xl sm:text-2xl font-black text-emerald-900">{deliveredOrders.length}</div>
+                    <span className="text-[10px] text-emerald-700">تحصل المبلغ نقداً {realizedRevenue} DH</span>
                   </div>
                 </div>
 
                 {/* Filters & Search Row */}
                 <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-                  {/* Search box */}
                   <div className="relative w-full sm:w-80">
                     <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -553,15 +703,14 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                     />
                   </div>
 
-                  {/* Status Pills Filter */}
                   <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 text-xs">
                     {[
                       { key: 'all', label: 'الكل' },
                       { key: 'new', label: 'جديد (Pending)' },
-                      { key: 'confirmed', label: 'مؤكد' },
-                      { key: 'shipped', label: 'قيد الشحن' },
-                      { key: 'delivered', label: 'تم التوصيل' },
-                      { key: 'cancelled', label: 'ملغي' },
+                      { key: 'confirmed', label: 'مؤكد (Confirmé)' },
+                      { key: 'shipped', label: 'قيد الشحن (Expédié)' },
+                      { key: 'delivered', label: 'تم التوصيل (Livré)' },
+                      { key: 'cancelled', label: 'ملغي / روتور (Annulé)' },
                     ].map((item) => (
                       <button
                         key={item.key}
@@ -578,7 +727,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                   </div>
                 </div>
 
-                {/* Orders Table & Cards */}
+                {/* Orders Table */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex-1 flex flex-col">
                   {filteredOrders.length === 0 ? (
                     <div className="p-12 text-center my-auto">
@@ -614,7 +763,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
 
                             return (
                               <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                                {/* Order Number & Date */}
                                 <td className="p-3.5 align-top">
                                   <div className="font-black text-slate-900 text-sm">
                                     #{order.orderNumber}
@@ -633,7 +781,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                                   )}
                                 </td>
 
-                                {/* Customer Info */}
                                 <td className="p-3.5 align-top">
                                   <div className="font-black text-slate-900">{order.fullName}</div>
                                   <div className="text-slate-600 font-bold text-[11px] mt-0.5">
@@ -646,7 +793,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                                   )}
                                 </td>
 
-                                {/* Phone & WhatsApp Action */}
                                 <td className="p-3.5 align-top">
                                   <div className="font-mono font-black text-slate-800 dir-ltr text-left">
                                     {order.phone}
@@ -673,7 +819,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                                   </div>
                                 </td>
 
-                                {/* Package & Price */}
                                 <td className="p-3.5 align-top">
                                   <div className="font-bold text-slate-900">{order.packageName}</div>
                                   <div className="text-blue-600 font-black text-sm mt-0.5">
@@ -684,7 +829,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                                   </div>
                                 </td>
 
-                                {/* Status Selector Dropdown */}
                                 <td className="p-3.5 align-top">
                                   <select
                                     value={order.status}
@@ -701,15 +845,14 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                                         : 'bg-rose-50 text-rose-800 border-rose-300'
                                     }`}
                                   >
-                                    <option value="new">🟡 جديد (New)</option>
-                                    <option value="confirmed">🟢 تم التأكيد (Confirmed)</option>
-                                    <option value="shipped">🔵 قيد الشحن (Shipped)</option>
-                                    <option value="delivered">🟣 تم التوصيل (Delivered)</option>
-                                    <option value="cancelled">🔴 ملغي (Cancelled)</option>
+                                    <option value="new">🟡 جديد (Pending)</option>
+                                    <option value="confirmed">🟢 تم التأكيد (Confirmé)</option>
+                                    <option value="shipped">🔵 قيد الشحن (Expédié)</option>
+                                    <option value="delivered">🟣 تم التوصيل (Livré)</option>
+                                    <option value="cancelled">🔴 ملغي / روتور (Annulé)</option>
                                   </select>
                                 </td>
 
-                                {/* Delete Action */}
                                 <td className="p-3.5 align-top text-center">
                                   <button
                                     onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
@@ -730,10 +873,347 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
               </div>
             )}
 
-            {/* TAB 2: GOOGLE SHEETS SETUP */}
+            {/* TAB 2: COD FINANCIAL ANALYTICS & PROFIT CALCULATOR */}
+            {activeTab === 'cod-analytics' && (
+              <div className="p-4 sm:p-6 space-y-6 flex-1 max-w-6xl mx-auto w-full">
+                {/* Hero Profit Banner */}
+                <div className="bg-gradient-to-br from-emerald-900 via-slate-900 to-emerald-950 text-white rounded-3xl p-5 sm:p-7 border border-emerald-800/50 shadow-xl relative overflow-hidden">
+                  <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          حساب البروفيا الصافي (Net Profit)
+                        </span>
+                        <span className="text-xs text-slate-300">
+                          بعد خصم السلعة، الشحن، الروتور، الإشهار والتأكيد
+                        </span>
+                      </div>
+                      <div className="text-3xl sm:text-5xl font-black tracking-tight text-white flex items-baseline gap-2">
+                        <span>{overallNetProfit.toLocaleString()}</span>
+                        <span className="text-2xl font-bold text-emerald-400">درهم (DH)</span>
+                      </div>
+                      <p className="text-xs text-emerald-200 mt-2">
+                        مداخيل مستلمة: <strong className="text-white">{realizedRevenue} DH</strong> | إجمالي المصاريف: <strong className="text-rose-300">{totalAllExpenses} DH</strong>
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 text-center min-w-[110px]">
+                        <div className="text-xs text-slate-300 font-bold mb-0.5">نسبة الربح (Marge)</div>
+                        <div className="text-2xl font-black text-emerald-400">
+                          {profitMarginPercent}%
+                        </div>
+                      </div>
+
+                      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 text-center min-w-[110px]">
+                        <div className="text-xs text-slate-300 font-bold mb-0.5">نسبة التوصيل</div>
+                        <div className="text-2xl font-black text-blue-400">
+                          {deliveryRate}%
+                        </div>
+                      </div>
+
+                      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 text-center min-w-[110px]">
+                        <div className="text-xs text-slate-300 font-bold mb-0.5">ربح الطلب المسلم</div>
+                        <div className="text-2xl font-black text-amber-300">
+                          +{avgProfitPerOrder} DH
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2 Columns: Costs Settings vs Detailed Financial Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column: Unit Costs Configurator (تعديل مصاريفك) */}
+                  <div className="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h4 className="font-black text-base text-slate-900 flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-blue-600" />
+                          <span>إعدادات تكاليفك (Unit Costs)</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          عدل هذه الأرقام حسب تكاليفك الحقيقية ليتم حساب البروفيا بدقة
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveCodCosts} className="space-y-3.5 text-xs">
+                      {/* Cost 1: Product Unit Cost */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-black text-slate-800">
+                            تكلفة شراء العلبة (Product Cost):
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-bold">للحبة الواحدة</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            value={codCosts.productUnitCost}
+                            onChange={(e) =>
+                              setCodCosts({ ...codCosts, productUnitCost: Number(e.target.value) })
+                            }
+                            className="w-full py-2 px-3 pl-10 rounded-lg bg-white border border-slate-300 font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400">
+                            DH
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Cost 2: Delivery Cost */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-black text-slate-800">
+                            تكلفة الشحن والتوصيل (Frais de Livraison):
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-bold">للطلب المسلم</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            value={codCosts.shippingCostDelivered}
+                            onChange={(e) =>
+                              setCodCosts({ ...codCosts, shippingCostDelivered: Number(e.target.value) })
+                            }
+                            className="w-full py-2 px-3 pl-10 rounded-lg bg-white border border-slate-300 font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400">
+                            DH
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Cost 3: Return (Retour) Cost */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-black text-slate-800">
+                            تكلفة الروتور (Frais de Retour):
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-bold">لكل كولي رجع</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            value={codCosts.shippingCostReturned}
+                            onChange={(e) =>
+                              setCodCosts({ ...codCosts, shippingCostReturned: Number(e.target.value) })
+                            }
+                            className="w-full py-2 px-3 pl-10 rounded-lg bg-white border border-slate-300 font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400">
+                            DH
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Cost 4: Ad Spend Per Lead (CPL) */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-black text-slate-800">
+                            تكلفة الإشهار لكل ليد (Cost Per Lead - CPL):
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-bold">Facebook / TikTok Ads</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            value={codCosts.adSpendPerLead}
+                            onChange={(e) =>
+                              setCodCosts({ ...codCosts, adSpendPerLead: Number(e.target.value) })
+                            }
+                            className="w-full py-2 px-3 pl-10 rounded-lg bg-white border border-slate-300 font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400">
+                            DH
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Cost 5: Call Center & Packaging */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                          <label className="font-black text-slate-800 block mb-1">
+                            التأكيد والمكالمات:
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              value={codCosts.confirmationCallCost}
+                              onChange={(e) =>
+                                setCodCosts({ ...codCosts, confirmationCallCost: Number(e.target.value) })
+                              }
+                              className="w-full py-1.5 px-2.5 pl-8 rounded-lg bg-white border border-slate-300 font-black text-slate-900 text-xs"
+                            />
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 font-bold text-[10px] text-slate-400">
+                              DH
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                          <label className="font-black text-slate-800 block mb-1">
+                            الكرتون والتغليف:
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              value={codCosts.packagingCost}
+                              onChange={(e) =>
+                                setCodCosts({ ...codCosts, packagingCost: Number(e.target.value) })
+                              }
+                              className="w-full py-1.5 px-2.5 pl-8 rounded-lg bg-white border border-slate-300 font-black text-slate-900 text-xs"
+                            />
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 font-bold text-[10px] text-slate-400">
+                              DH
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSavingCosts}
+                        className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>{isSavingCosts ? 'جاري الحفظ...' : 'حفظ التكاليف وتحديث الحسابات'}</span>
+                      </button>
+
+                      {costsSavedNotice && (
+                        <p className="text-center text-xs font-bold text-emerald-600 bg-emerald-50 py-1.5 rounded-lg">
+                          ✓ تم حفظ إعدادات التكاليف بنجاح!
+                        </p>
+                      )}
+                    </form>
+                  </div>
+
+                  {/* Right Column: Detailed Full Breakdown Table & Funnel */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {/* The Full Financial Statement Card */}
+                    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs">
+                      <h4 className="font-black text-base text-slate-900 mb-4 flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-emerald-600" />
+                        <span>كشف الحساب التفصيلي (Financial Statement)</span>
+                      </h4>
+
+                      <div className="space-y-3 text-xs">
+                        {/* 1. Revenue */}
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/60 border border-emerald-200">
+                          <div>
+                            <div className="font-black text-emerald-950 text-sm">
+                              إجمالي المداخيل المحصلة (Chiffre d'Affaires)
+                            </div>
+                            <div className="text-[11px] text-emerald-700">
+                              من {deliveredOrders.length} طلبات تم تسليمها بنجاح للزبناء
+                            </div>
+                          </div>
+                          <div className="text-base font-black text-emerald-700">
+                            +{realizedRevenue.toLocaleString()} DH
+                          </div>
+                        </div>
+
+                        {/* 2. Costs Breakdown List */}
+                        <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2.5">
+                          <div className="font-black text-slate-700 text-xs border-b border-slate-200 pb-2">
+                            تفصيل المصاريف المخصومة:
+                          </div>
+
+                          <div className="flex justify-between items-center text-slate-600">
+                            <span>📦 تكلفة السلعة المباعة ({deliveredBoxesCount} علب × {codCosts.productUnitCost} DH)</span>
+                            <span className="font-bold text-rose-600">-{totalProductCost} DH</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-slate-600">
+                            <span>🚚 مصاريف الشحن للطلبات المستلمة ({deliveredOrders.length} × {codCosts.shippingCostDelivered} DH)</span>
+                            <span className="font-bold text-rose-600">-{totalDeliveredShippingCost} DH</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-slate-600">
+                            <span>🔄 مصاريف الروتور ({returnedCount} طلبيات ملغاة × {codCosts.shippingCostReturned} DH)</span>
+                            <span className="font-bold text-rose-600">-{totalReturnedShippingCost} DH</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-slate-600">
+                            <span>📢 ميزانية الإعلانات المقدرة ({totalLeads} ليدات × {codCosts.adSpendPerLead} DH)</span>
+                            <span className="font-bold text-rose-600">-{totalEstimatedAdSpend} DH</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-slate-600">
+                            <span>📞 مركز الاتصال والتأكيد ({totalLeads} ليد × {codCosts.confirmationCallCost} DH)</span>
+                            <span className="font-bold text-rose-600">-{totalCallCenterCost} DH</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-slate-600">
+                            <span>📦 الكرتون والتغليف ({deliveredOrders.length} طلبات × {codCosts.packagingCost} DH)</span>
+                            <span className="font-bold text-rose-600">-{totalPackagingCost} DH</span>
+                          </div>
+
+                          <div className="border-t border-slate-200 pt-2 flex justify-between items-center font-black text-slate-900">
+                            <span>مجموع المصاريف الإجمالية:</span>
+                            <span className="text-rose-700">-{totalAllExpenses} DH</span>
+                          </div>
+                        </div>
+
+                        {/* 3. Final Net Profit */}
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md">
+                          <div>
+                            <div className="font-black text-base">الربح الصافي في الجيب (Net Profit)</div>
+                            <div className="text-[11px] text-emerald-100">
+                              هامش ربح حقيقي {profitMarginPercent}%
+                            </div>
+                          </div>
+                          <div className="text-xl sm:text-2xl font-black text-white">
+                            {overallNetProfit > 0 ? `+${overallNetProfit.toLocaleString()}` : overallNetProfit.toLocaleString()} DH
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Funnel & Conversion Rates Card */}
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs">
+                      <h5 className="font-black text-xs text-slate-800 mb-3 flex items-center gap-1.5">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <span>مؤشرات أداء مسار التجارة (COD Funnel & Conversion)</span>
+                      </h5>
+
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <div className="text-[10px] text-slate-500 font-bold">نسبة التأكيد</div>
+                          <div className="text-lg font-black text-slate-900 mt-0.5">{confirmationRate}%</div>
+                          <div className="text-[9px] text-slate-400">من الليد إلى مؤكد</div>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <div className="text-[10px] text-slate-500 font-bold">نسبة التوصيل</div>
+                          <div className="text-lg font-black text-emerald-600 mt-0.5">{deliveryRate}%</div>
+                          <div className="text-[9px] text-slate-400">من المشحون إلى مستلم</div>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <div className="text-[10px] text-slate-500 font-bold">نسبة الروتور</div>
+                          <div className="text-lg font-black text-rose-600 mt-0.5">
+                            {shippedTotal > 0 ? Math.round((returnedCount / shippedTotal) * 100) : 0}%
+                          </div>
+                          <div className="text-[9px] text-slate-400">طلبات راجعة</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: GOOGLE SHEETS SETUP */}
             {activeTab === 'sheets' && (
               <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6 flex-1">
-                {/* Intro Card */}
                 <div className="bg-emerald-900 text-white rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden">
                   <div className="relative z-10 max-w-2xl">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-800 text-emerald-200 mb-3 border border-emerald-700">
@@ -749,7 +1229,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                   </div>
                 </div>
 
-                {/* Form to Save Webhook URL */}
                 <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
                   <h5 className="text-base font-black text-slate-900 flex items-center gap-2">
                     <span>1. رابط الويب هوك (Google Webhook URL)</span>
@@ -805,7 +1284,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                   </form>
                 </div>
 
-                {/* Step by Step Guide + Script Code */}
                 <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
                   <div className="flex items-center justify-between">
                     <h5 className="text-base font-black text-slate-900">
@@ -828,11 +1306,10 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                       <strong>الخطوة 2:</strong> من القائمة العلوية اضغط على <strong>Extensions (الإضافات)</strong> ⬅ ثم <strong>Apps Script</strong>.
                     </p>
                     <p>
-                      <strong>الخطوة 3:</strong> امسح أي كود موجود في الصفحة، ثم ألصق الكود الجاهز التالي:
+                      <strong>الخطوة 3:</strong> امسح أي كود موجود في الصفحة، ثم ألصق الكود التالي:
                     </p>
                   </div>
 
-                  {/* Code snippet container */}
                   <div className="relative">
                     <pre className="p-4 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl overflow-x-auto dir-ltr text-left border border-slate-800 max-h-56">
                       {APPS_SCRIPT_TEMPLATE}
@@ -854,7 +1331,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
               </div>
             )}
 
-            {/* TAB 3: ADD MANUAL ORDER */}
+            {/* TAB 4: ADD MANUAL ORDER */}
             {activeTab === 'new-order' && (
               <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-4 flex-1">
                 <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs">

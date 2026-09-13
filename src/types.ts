@@ -49,6 +49,15 @@ export interface OrderFormData {
 
 export type OrderStatus = 'new' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
+export interface CodUnitCosts {
+  productUnitCost: number;       // تكلفة شراء/صنع العلبة (مثلاً 45 DH)
+  shippingCostDelivered: number; // تكلفة شركة الشحن للطلبات المستلمة (مثلاً 35 DH)
+  shippingCostReturned: number;  // تكلفة الروتور في حالة الإلغاء/الرفض (مثلاً 15 DH)
+  confirmationCallCost: number;  // تكلفة التأكيد والهاتف (مثلاً 5 DH)
+  packagingCost: number;         // تكلفة الكرتون والتعليب (مثلاً 4 DH)
+  adSpendPerLead: number;        // تكلفة الإشهار لكل ليد (Cost Per Lead - مثلاً 30 DH)
+}
+
 export interface OrderRecord {
   id: string;
   orderNumber: string;
@@ -64,6 +73,8 @@ export interface OrderRecord {
   status: OrderStatus;
   notes?: string;
   syncedToSheets?: boolean;
+  customProductCost?: number;
+  customShippingCost?: number;
 }
 
 export type VoiceName = 'Kore' | 'Zephyr' | 'Puck' | 'Fenrir' | 'Charon';

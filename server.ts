@@ -17,6 +17,19 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 
+const DEFAULT_SETTINGS = {
+  googleSheetsWebhookUrl: "",
+  adminPin: "1234",
+  codCosts: {
+    productUnitCost: 45,       // تكلفة العلبة الواحدة درهم
+    shippingCostDelivered: 35, // مصاريف التوصيل للطلبات الناجحة
+    shippingCostReturned: 15,  // مصاريف الروتور (الرجوع)
+    confirmationCallCost: 5,   // مصاريف مركز الاتصال/الهاتف
+    packagingCost: 4,          // كرتونة وتعليب
+    adSpendPerLead: 25,        // كلفة الإشهار لكل زبون مسجل (CPL)
+  },
+};
+
 function initStorage() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -25,18 +38,7 @@ function initStorage() {
     fs.writeFileSync(ORDERS_FILE, JSON.stringify([], null, 2), "utf8");
   }
   if (!fs.existsSync(SETTINGS_FILE)) {
-    fs.writeFileSync(
-      SETTINGS_FILE,
-      JSON.stringify(
-        {
-          googleSheetsWebhookUrl: "",
-          adminPin: "1234",
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2), "utf8");
   }
 }
 
@@ -61,16 +63,24 @@ function saveOrders(orders: any[]) {
   }
 }
 
-function getSettings(): { googleSheetsWebhookUrl: string; adminPin: string } {
+function getSettings(): typeof DEFAULT_SETTINGS {
   try {
     if (!fs.existsSync(SETTINGS_FILE)) {
-      return { googleSheetsWebhookUrl: "", adminPin: "1234" };
+      return { ...DEFAULT_SETTINGS };
     }
     const content = fs.readFileSync(SETTINGS_FILE, "utf8");
-    return JSON.parse(content || "{}");
+    const parsed = JSON.parse(content || "{}");
+    return {
+      googleSheetsWebhookUrl: parsed.googleSheetsWebhookUrl || "",
+      adminPin: parsed.adminPin || "1234",
+      codCosts: {
+        ...DEFAULT_SETTINGS.codCosts,
+        ...(parsed.codCosts || {}),
+      },
+    };
   } catch (err) {
     console.error("Error reading settings:", err);
-    return { googleSheetsWebhookUrl: "", adminPin: "1234" };
+    return { ...DEFAULT_SETTINGS };
   }
 }
 
@@ -355,11 +365,12 @@ app.get("/api/admin/settings", (req, res) => {
     success: true,
     googleSheetsWebhookUrl: settings.googleSheetsWebhookUrl || "",
     hasWebhook: !!settings.googleSheetsWebhookUrl,
+    codCosts: settings.codCosts,
   });
 });
 
 app.post("/api/admin/settings", (req, res) => {
-  const { googleSheetsWebhookUrl, adminPin } = req.body;
+  const { googleSheetsWebhookUrl, adminPin, codCosts } = req.body;
   const settings = getSettings();
 
   if (googleSheetsWebhookUrl !== undefined) {
@@ -367,6 +378,16 @@ app.post("/api/admin/settings", (req, res) => {
   }
   if (adminPin) {
     settings.adminPin = String(adminPin).trim();
+  }
+  if (codCosts && typeof codCosts === "object") {
+    settings.codCosts = {
+      productUnitCost: Math.max(0, Number(codCosts.productUnitCost) || 0),
+      shippingCostDelivered: Math.max(0, Number(codCosts.shippingCostDelivered) || 0),
+      shippingCostReturned: Math.max(0, Number(codCosts.shippingCostReturned) || 0),
+      confirmationCallCost: Math.max(0, Number(codCosts.confirmationCallCost) || 0),
+      packagingCost: Math.max(0, Number(codCosts.packagingCost) || 0),
+      adSpendPerLead: Math.max(0, Number(codCosts.adSpendPerLead) || 0),
+    };
   }
 
   saveSettings(settings);
