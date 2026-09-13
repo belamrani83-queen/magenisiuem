@@ -1,0 +1,6 @@
+{
+  "name": "Magnesium Complex - مغنيسيوم قوي لراحة يومك ودعم الجسم والعقل",
+  "description": "المتجر الرسمي لمكمل مغنيسيوم جليسينات ومالات 2150mg مع فيتامين D3 والخضار والبذور لتهدئة التوتر، استرخاء العضلات، ونوم عميق. توصيل مجاني لجميع مدن المغرب والدفع عند الاستلام.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
