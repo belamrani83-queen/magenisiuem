@@ -7,6 +7,9 @@ import { ComparisonSection } from './components/ComparisonSection';
 import { IngredientsSection } from './components/IngredientsSection';
 import { BenefitsSection } from './components/BenefitsSection';
 import { HowToUseSection } from './components/HowToUseSection';
+import { BeforeAfterSection } from './components/BeforeAfterSection';
+import { VisualGallerySection } from './components/VisualGallerySection';
+import { RealProofSection } from './components/RealProofSection';
 import { GuaranteesSection } from './components/GuaranteesSection';
 import { ReviewsSection } from './components/ReviewsSection';
 import { WhatsAppReviewsSection } from './components/WhatsAppReviewsSection';
@@ -68,6 +71,15 @@ export default function App() {
 
         {/* 6. Clear recovery timeline & physical progression */}
         <BenefitsSection />
+
+        {/* 6.1 Real Visual Before & After Transformation Section */}
+        <BeforeAfterSection onScrollToOffers={scrollToOffers} />
+
+        {/* 6.2 Real Product & Natural Ingredients Visual Gallery Showcase */}
+        <VisualGallerySection onScrollToOffers={scrollToOffers} />
+
+        {/* 6.3 Certificate of Quality & Authentic Social Proof Banners */}
+        <RealProofSection onScrollToOffers={scrollToOffers} />
 
         {/* 7. Step-by-step How-To-Use guide for friction-free adoption */}
         <HowToUseSection />

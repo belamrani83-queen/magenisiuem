@@ -265,6 +265,22 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
         {/* Order Form Container */}
         <div id="order-form" className="max-w-2xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-2xl border border-slate-200">
           <div className="text-center mb-6">
+            {/* Real Product Bottle Quick Preview */}
+            <div className="flex items-center justify-center gap-3 p-3 mb-4 rounded-2xl bg-blue-50/80 border border-blue-200">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-blue-200 shrink-0 shadow-xs">
+                <img
+                  src="/src/assets/images/magnesium_exact_bottle_1789340675597.jpg"
+                  alt="Magnesium Complex 2150mg"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-right">
+                <div className="font-black text-xs text-blue-950">Magnesium Glycinate + Malate (2150mg)</div>
+                <div className="text-[11px] text-emerald-700 font-bold">✓ أصلي ومضمون (30 كبسولة نباتية - كورس شهر كامل)</div>
+              </div>
+            </div>
+
             <span className="inline-flex items-center gap-1.5 text-xs font-black text-blue-700 uppercase tracking-wider mb-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>استمارة تأكيد الطلب السريع</span>

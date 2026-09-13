@@ -33,7 +33,7 @@ export const StorySection: React.FC<StorySectionProps> = ({ onScrollToOffers }) 
             <div className="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 bg-slate-100 group">
               <img
                 id="story-vitality-image"
-                src="/src/assets/images/magnesium_vitality_1789224828549.jpg"
+                src="/src/assets/images/after_energy_sleep_1789335662790.jpg"
                 alt="الاستيقاظ بنشاط وحيوية ونوم عميق بفضل المغنيسيوم"
                 referrerPolicy="no-referrer"
                 className="w-full h-auto aspect-4/3 object-cover group-hover:scale-102 transition-transform duration-500"

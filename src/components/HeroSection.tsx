@@ -138,7 +138,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <div className="relative rounded-2xl overflow-hidden aspect-square bg-gradient-to-b from-blue-50/50 to-slate-100 flex items-center justify-center">
                   <img
                     id="hero-product-image"
-                    src="/src/assets/images/magnesium_bottle_1789224807171.jpg"
+                    src="/src/assets/images/magnesium_exact_bottle_1789340675597.jpg"
                     alt="مكمل Magnesium Glycinate + Malate 2150mg مع فيتامين D3"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-500"
@@ -156,7 +156,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   {/* Guarantee & Specs */}
                   <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-xs border border-blue-200 text-slate-900 text-[11px] font-extrabold px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
-                    <span>90 كبسولة نباتية نقية 100%</span>
+                    <span>30 كبسولة نباتية نقية (شهر كامل)</span>
                   </div>
 
                   <div className="absolute bottom-3 right-3 bg-slate-900/90 text-white text-[11px] font-black px-3 py-1.5 rounded-xl shadow-sm">
