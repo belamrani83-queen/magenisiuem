@@ -59,14 +59,14 @@ export const FaqSection: React.FC = () => {
 
         {/* Additional Help Callout */}
         <div className="mt-10 p-5 rounded-2xl bg-white border border-slate-200 text-center text-xs sm:text-sm text-slate-600">
-          <span>عندك سؤال آخر؟ تواصل مباشرة مع فريق خدمة العملاء عبر الواتساب: </span>
+          <span>عندك سؤال آخر؟ تواصل مباشرة مع فريق خدمة العملاء عبر الواتساب (0700363949): </span>
           <a
-            href="https://wa.me/212600000000"
+            href="https://wa.me/212700363949"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-700 font-bold underline hover:text-emerald-800 mr-1"
           >
-            اضغط هنا للتحدث معنا
+            اضغط هنا للتحدث معنا عبر الواتساب
           </a>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Truck, Phone, MessageSquare, Heart, ArrowUp, Moon } from 'lucide-react';
+import { ShieldCheck, Truck, MessageCircle, Heart, ArrowUp, Moon } from 'lucide-react';
 
 interface FooterProps {
   onScrollToTop: () => void;
@@ -92,17 +92,17 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToTop, onScrollToOffers 
               خدمة الزبناء والمساعدة
             </h4>
             <p className="text-xs text-slate-400">
-              فريقنا في خدمتكم يومياً من 9:00 صباحاً إلى 20:00 مساءً للرد على تساؤلاتكم.
+              فريقنا في خدمتكم يومياً للرد على تساؤلاتكم وتأكيد الطلبيات بالمغرب.
             </p>
             <div className="pt-1">
               <a
-                href="https://wa.me/212600000000"
+                href="https://wa.me/212700363949"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-900/80 hover:bg-blue-800 text-xs font-bold text-white transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-xs sm:text-sm font-black text-white shadow-md shadow-emerald-900/30 transition-all hover:scale-105"
               >
-                <MessageSquare className="w-4 h-4 text-blue-300" />
-                <span>تواصل معنا عبر WhatsApp</span>
+                <MessageCircle className="w-4 h-4 fill-white text-white" />
+                <span>واتساب للطلب: 0700363949</span>
               </a>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, ShoppingBag, MessageSquare, PhoneCall, CheckCircle2, Award } from 'lucide-react';
+import { ShieldCheck, ShoppingBag, MessageCircle, PhoneCall, CheckCircle2, Award } from 'lucide-react';
 
 interface NavbarProps {
   onScrollToOffers: () => void;
@@ -44,12 +44,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToOffers }) => {
           {/* WhatsApp Direct Order link */}
           <a
             id="nav-whatsapp-link"
-            href="https://wa.me/212600000000?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A8%D8%BA%D9%8A%D8%AA%20%D9%86%D8%B3%D9%88%D9%84%20%D8%B9%D9%84%D9%89%20%D9%85%D9%83%D9%85%D9%84%20Magnesium%20Complex"
+            href="https://wa.me/212700363949?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A8%D8%BA%D9%8A%D8%AA%20%D9%86%D8%B3%D9%88%D9%84%20%D8%B9%D9%84%D9%89%20%D9%85%D9%83%D9%85%D9%84%20Magnesium%20Complex"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-black text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            <MessageSquare className="w-4 h-4 text-emerald-600" />
+            <MessageCircle className="w-4 h-4 fill-white text-white" />
             <span>طلب عبر WhatsApp</span>
           </a>
 

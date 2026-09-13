@@ -1,5 +1,11 @@
 import { PackageOffer, ReviewItem, IngredientItem, FaqItem } from '../types';
 
+// Contact & Ordering Details
+export const STORE_PHONE = "0700363949";
+export const STORE_PHONE_DISPLAY = "07 00 36 39 49";
+export const STORE_PHONE_INTL = "+212700363949";
+export const STORE_WHATSAPP_NUMBER = "212700363949";
+
 // The Moroccan Darija story for Magnesium Complex
 export const ORIGINAL_STORY_DARIJA = `شحال من واحد فينا كيفيق كل صباح عيان ومسخسخ بحال يلا ما نعسش، مع تشنجات فالعضلات (les crampes) وتوتر وأرق كيعذبو البال.
 

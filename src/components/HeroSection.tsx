@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, ShieldCheck, Truck, Star, ArrowDown, Moon, Zap, HeartPulse, CheckCircle2, MessageSquare, Clock, Sparkles } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Truck, Star, ArrowDown, Moon, Zap, HeartPulse, CheckCircle2, MessageCircle, Clock, Sparkles } from 'lucide-react';
 
 interface HeroSectionProps {
   onScrollToOffers: () => void;
@@ -98,13 +98,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               <a
                 id="hero-whatsapp-btn"
-                href="https://wa.me/212600000000?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A8%D8%BA%D9%8A%D8%AA%20%D9%86%D8%B7%D9%84%D8%A8%20%D9%85%D9%83%D9%85%D9%84%20Magnesium%20Complex"
+                href="https://wa.me/212700363949?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A8%D8%BA%D9%8A%D8%AA%20%D9%86%D8%B7%D9%84%D8%A8%20%D9%85%D9%83%D9%85%D9%84%20Magnesium%20Complex"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-4 px-5 rounded-2xl font-bold text-sm sm:text-base text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="py-4 px-5 rounded-2xl font-black text-sm sm:text-base text-white bg-[#25D366] hover:bg-[#20bd5a] shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-98"
               >
-                <MessageSquare className="w-5 h-5 text-emerald-600" />
-                <span>طلب سريع عبر واتساب</span>
+                <MessageCircle className="w-5 h-5 fill-white text-white" />
+                <span>طلب سريع عبر الواتساب</span>
               </a>
             </div>
 

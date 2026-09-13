@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, MessageSquare, Phone } from 'lucide-react';
+import { ShoppingBag, MessageCircle } from 'lucide-react';
 
 interface MobileStickyBarProps {
   onScrollToOffers: () => void;
@@ -12,26 +12,17 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
 }) => {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 sm:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 p-2.5 shadow-2xl flex items-center gap-2">
-      {/* Phone Call button */}
-      <a
-        id="mobile-call-btn"
-        href="tel:+212600000000"
-        className="p-3 rounded-xl bg-slate-100 text-slate-800 border border-slate-300 flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
-        title="اتصال هاتفي مباشر"
-      >
-        <Phone className="w-4 h-4 text-blue-600" />
-      </a>
-
       {/* WhatsApp Quick Order button */}
       <a
         id="mobile-whatsapp-btn"
-        href="https://wa.me/212600000000?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A8%D8%BA%D9%8A%D8%AA%20%D9%86%D8%B7%D9%84%D8%A8%20%D9%85%D9%83%D9%85%D9%84%20Magnesium%20Complex"
+        href="https://wa.me/212700363949?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A8%D8%BA%D9%8A%D8%AA%20%D9%86%D8%B7%D9%84%D8%A8%20%D9%85%D9%83%D9%85%D9%84%20Magnesium%20Complex"
         target="_blank"
         rel="noopener noreferrer"
-        className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
-        title="طلب عبر الواتساب"
+        className="px-3.5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-emerald-500/20 font-black text-xs"
+        title="طلب عبر الواتساب (0700363949)"
       >
-        <MessageSquare className="w-4 h-4 text-emerald-600" />
+        <MessageCircle className="w-5 h-5 fill-white text-white" />
+        <span>واتساب</span>
       </a>
 
       {/* Main Order Button */}

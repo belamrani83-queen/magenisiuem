@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, CheckCircle2, ShieldCheck, Truck, Gift, Star, Phone, MessageSquare, AlertCircle, Clock, Award, Lock, Flame } from 'lucide-react';
+import { ShoppingBag, CheckCircle2, ShieldCheck, Truck, Gift, Star, MessageCircle, AlertCircle, Clock, Award, Lock, Flame } from 'lucide-react';
 import { PACKAGE_OFFERS, MOROCCAN_CITIES } from '../data/content';
 import { PackageOffer } from '../types';
 
@@ -101,7 +101,7 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
     const message = encodeURIComponent(
       `السلام عليكم، بغيت نطلب مكمل Magnesium Complex (مغنيسيوم 2150mg):\n- العرض: ${selectedOffer.title} (${selectedOffer.price} درهم)\n- الاسم: ${formData.fullName || 'الزبون'}\n- المدينة: ${formData.city}\n- الهاتف: ${formData.phone || ''}`
     );
-    return `https://wa.me/212600000000?text=${message}`;
+    return `https://wa.me/212700363949?text=${message}`;
   };
 
   return (
@@ -463,35 +463,24 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
                 </div>
               </div>
 
-              {/* Direct Alternative Order Options: WhatsApp + Phone Call */}
-              <div className="pt-3 space-y-2.5">
-                <div className="flex items-center gap-3 my-2">
+              {/* Direct Alternative: Order via WhatsApp */}
+              <div className="pt-3">
+                <div className="flex items-center gap-3 my-3">
                   <div className="flex-1 h-px bg-slate-200"></div>
-                  <span className="text-xs font-bold text-slate-400">أو اطلب مباشرة وبكل سهولة</span>
+                  <span className="text-xs font-bold text-slate-400">أو اطلب مباشرة عبر الواتساب</span>
                   <div className="flex-1 h-px bg-slate-200"></div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <a
-                    id="order-whatsapp-btn"
-                    href={generateWhatsAppUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-3 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4 text-emerald-600" />
-                    <span>طلب عبر الواتساب (WhatsApp)</span>
-                  </a>
-
-                  <a
-                    id="order-call-btn"
-                    href="tel:+212600000000"
-                    className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <Phone className="w-4 h-4 text-blue-600" />
-                    <span>اتصال هاتفي مباشر للطلب</span>
-                  </a>
-                </div>
+                <a
+                  id="order-whatsapp-btn"
+                  href={generateWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 px-5 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.01] active:scale-98 cursor-pointer"
+                >
+                  <MessageCircle className="w-5 h-5 fill-white text-white" />
+                  <span>طلب مباشر عبر الواتساب (WhatsApp: 0700363949)</span>
+                </a>
               </div>
             </form>
           )}
