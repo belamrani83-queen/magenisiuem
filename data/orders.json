@@ -1,0 +1,18 @@
+[
+  {
+    "id": "ord_1789334604491_911",
+    "orderNumber": "MG-612630",
+    "createdAt": "2026-09-13T21:23:24.491Z",
+    "fullName": "يوسف العلمي",
+    "phone": "0661234567",
+    "city": "الدار البيضاء",
+    "address": "حي المعاريف زنقة 14",
+    "packageId": "pack-2",
+    "packageName": "باقة شهرين (علبتين) - الأكثر طلباً",
+    "price": 320,
+    "quantity": 2,
+    "status": "new",
+    "notes": "",
+    "syncedToSheets": false
+  }
+]

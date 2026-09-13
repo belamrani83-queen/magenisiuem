@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { createServer as createViteServer } from "vite";
@@ -10,6 +11,119 @@ const PORT = 3000;
 const app = express();
 
 app.use(express.json({ limit: "10mb" }));
+
+// Persistent storage setup
+const DATA_DIR = path.join(process.cwd(), "data");
+const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
+
+function initStorage() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(ORDERS_FILE)) {
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify([], null, 2), "utf8");
+  }
+  if (!fs.existsSync(SETTINGS_FILE)) {
+    fs.writeFileSync(
+      SETTINGS_FILE,
+      JSON.stringify(
+        {
+          googleSheetsWebhookUrl: "",
+          adminPin: "1234",
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+  }
+}
+
+initStorage();
+
+function getOrders(): any[] {
+  try {
+    if (!fs.existsSync(ORDERS_FILE)) return [];
+    const content = fs.readFileSync(ORDERS_FILE, "utf8");
+    return JSON.parse(content || "[]");
+  } catch (err) {
+    console.error("Error reading orders:", err);
+    return [];
+  }
+}
+
+function saveOrders(orders: any[]) {
+  try {
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error saving orders:", err);
+  }
+}
+
+function getSettings(): { googleSheetsWebhookUrl: string; adminPin: string } {
+  try {
+    if (!fs.existsSync(SETTINGS_FILE)) {
+      return { googleSheetsWebhookUrl: "", adminPin: "1234" };
+    }
+    const content = fs.readFileSync(SETTINGS_FILE, "utf8");
+    return JSON.parse(content || "{}");
+  } catch (err) {
+    console.error("Error reading settings:", err);
+    return { googleSheetsWebhookUrl: "", adminPin: "1234" };
+  }
+}
+
+function saveSettings(settings: any) {
+  try {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error saving settings:", err);
+  }
+}
+
+async function sendToGoogleSheetsWebhook(order: any, webhookUrl: string): Promise<boolean> {
+  if (!webhookUrl || typeof webhookUrl !== "string" || !webhookUrl.startsWith("http")) {
+    return false;
+  }
+  try {
+    const formattedDate = new Date(order.createdAt).toLocaleString("fr-FR", {
+      timeZone: "Africa/Casablanca",
+    });
+
+    const payload = {
+      orderId: order.orderNumber,
+      date: formattedDate,
+      fullName: order.fullName,
+      phone: order.phone,
+      city: order.city,
+      address: order.address || "غير محدد",
+      packageName: order.packageName,
+      price: `${order.price} DH`,
+      quantity: order.quantity || 1,
+      status:
+        order.status === "confirmed"
+          ? "مؤكد"
+          : order.status === "shipped"
+          ? "قيد الشحن"
+          : order.status === "delivered"
+          ? "تم التوصيل"
+          : "جديد",
+      notes: order.notes || "",
+    };
+
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error("Google Sheets webhook dispatch failed:", err);
+    return false;
+  }
+}
 
 // Lazy initialization of Gemini client
 let aiClient: GoogleGenAI | null = null;
@@ -136,21 +250,164 @@ app.post("/api/tts", async (req, res) => {
   }
 });
 
-// Mock order submission API for customer orders (Moroccan Cash on Delivery / الدفع عند الاستلام)
-app.post("/api/orders", (req, res) => {
-  const { fullName, phone, city, address, packageId, quantity } = req.body;
-  if (!fullName || !phone || !city) {
-    return res.status(400).json({ error: "المرجو ملء جميع الحقول المطلوبة" });
+// Orders and Dashboard API Routes
+app.get("/api/orders", (req, res) => {
+  const orders = getOrders();
+  // Sort latest first
+  orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  res.json({ success: true, orders });
+});
+
+app.post("/api/orders", async (req, res) => {
+  try {
+    const { fullName, phone, city, address, packageId, packageName, totalPrice, quantity, notes } = req.body;
+    if (!fullName || !phone || !city) {
+      return res.status(400).json({ error: "المرجو ملء جميع الحقول المطلوبة (الاسم، الهاتف، المدينة)" });
+    }
+
+    const orderNumber = "MG-" + Math.floor(100000 + Math.random() * 900000);
+    const newOrder = {
+      id: "ord_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+      orderNumber,
+      createdAt: new Date().toISOString(),
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      city: city.trim(),
+      address: (address || "").trim(),
+      packageId: packageId || "pack-2",
+      packageName: packageName || "مكمل المغنيسيوم 2150mg",
+      price: Number(totalPrice) || 249,
+      quantity: Number(quantity) || 1,
+      status: "new",
+      notes: notes || "",
+      syncedToSheets: false,
+    };
+
+    // Save to persistent file
+    const orders = getOrders();
+    orders.unshift(newOrder);
+    saveOrders(orders);
+
+    console.log(`[Order Saved]: #${orderNumber} for ${fullName} (${city}) - ${newOrder.price} DH`);
+
+    // Asynchronously dispatch to Google Sheets webhook if configured
+    const settings = getSettings();
+    if (settings.googleSheetsWebhookUrl) {
+      sendToGoogleSheetsWebhook(newOrder, settings.googleSheetsWebhookUrl).then((synced) => {
+        if (synced) {
+          const currentOrders = getOrders();
+          const target = currentOrders.find((o) => o.id === newOrder.id);
+          if (target) {
+            target.syncedToSheets = true;
+            saveOrders(currentOrders);
+            console.log(`[Order #${orderNumber} synced to Google Sheets successfully]`);
+          }
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      orderId: orderNumber,
+      order: newOrder,
+      message: "تم تسجيل طلبك بنجاح! سيتصل بك فريقنا لتأكيد العنوان وموعد التوصيل بالمجان.",
+    });
+  } catch (err: any) {
+    console.error("Error creating order:", err);
+    return res.status(500).json({ error: "حدث خطأ أثناء حفظ الطلب" });
+  }
+});
+
+app.patch("/api/orders/:id", (req, res) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+  const orders = getOrders();
+  const orderIndex = orders.findIndex((o) => o.id === id || o.orderNumber === id);
+
+  if (orderIndex === -1) {
+    return res.status(404).json({ error: "الطلب غير موجود" });
   }
 
-  const orderId = "MG-" + Math.floor(100000 + Math.random() * 900000);
-  console.log(`[New Order Received]: #${orderId} - ${fullName} (${city}) - Tel: ${phone} - Pack: ${packageId} x ${quantity}`);
+  if (status) orders[orderIndex].status = status;
+  if (notes !== undefined) orders[orderIndex].notes = notes;
 
-  return res.json({
+  saveOrders(orders);
+  return res.json({ success: true, order: orders[orderIndex] });
+});
+
+app.delete("/api/orders/:id", (req, res) => {
+  const { id } = req.params;
+  const orders = getOrders();
+  const filtered = orders.filter((o) => o.id !== id && o.orderNumber !== id);
+
+  if (filtered.length === orders.length) {
+    return res.status(404).json({ error: "الطلب غير موجود" });
+  }
+
+  saveOrders(filtered);
+  return res.json({ success: true, message: "تم حذف الطلب بنجاح" });
+});
+
+// Admin Settings & Webhook Routes
+app.get("/api/admin/settings", (req, res) => {
+  const settings = getSettings();
+  res.json({
     success: true,
-    orderId,
-    message: "تم تسجيل طلبك بنجاح! سيتصل بك فريقنا لتأكيد العنوان وموعد التوصيل بالمجان.",
+    googleSheetsWebhookUrl: settings.googleSheetsWebhookUrl || "",
+    hasWebhook: !!settings.googleSheetsWebhookUrl,
   });
+});
+
+app.post("/api/admin/settings", (req, res) => {
+  const { googleSheetsWebhookUrl, adminPin } = req.body;
+  const settings = getSettings();
+
+  if (googleSheetsWebhookUrl !== undefined) {
+    settings.googleSheetsWebhookUrl = (googleSheetsWebhookUrl || "").trim();
+  }
+  if (adminPin) {
+    settings.adminPin = String(adminPin).trim();
+  }
+
+  saveSettings(settings);
+  res.json({ success: true, settings });
+});
+
+app.post("/api/admin/test-webhook", async (req, res) => {
+  const { webhookUrl } = req.body;
+  const targetUrl = webhookUrl || getSettings().googleSheetsWebhookUrl;
+
+  if (!targetUrl) {
+    return res.status(400).json({ error: "رابط Google Sheets Webhook غير محدد" });
+  }
+
+  const dummyOrder = {
+    orderNumber: "MG-TEST-" + Math.floor(100 + Math.random() * 900),
+    createdAt: new Date().toISOString(),
+    fullName: "تجربة ربط الشيت (Test Lead)",
+    phone: "0700363949",
+    city: "الدار البيضاء (Casablanca)",
+    address: "شارع المسيرة الخضراء، تجربة",
+    packageName: "باقة شهرين (علبتين) - تجربة",
+    price: 349,
+    quantity: 2,
+    status: "new",
+    notes: "هذا سطر تجريبي للتأكد من اتصال الموقع بجدول Google Sheets بنجاح!",
+  };
+
+  const ok = await sendToGoogleSheetsWebhook(dummyOrder, targetUrl);
+  if (ok) {
+    return res.json({ success: true, message: "تم إرسال سطر التجربة إلى جدول Google Sheets بنجاح! تفقد الجدول الآن." });
+  } else {
+    return res.status(500).json({ error: "تعذر الاتصال بالرابط، تأكد من صلاحيات النشر (Anyone) في Apps Script" });
+  }
+});
+
+app.post("/api/admin/verify-pin", (req, res) => {
+  const { pin } = req.body;
+  const settings = getSettings();
+  const valid = String(pin).trim() === String(settings.adminPin).trim();
+  res.json({ success: true, valid });
 });
 
 // Vite middleware setup

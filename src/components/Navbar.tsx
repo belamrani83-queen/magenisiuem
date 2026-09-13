@@ -1,11 +1,12 @@
 import React from 'react';
-import { ShieldCheck, ShoppingBag, MessageCircle, PhoneCall, CheckCircle2, Award } from 'lucide-react';
+import { ShieldCheck, ShoppingBag, MessageCircle, PhoneCall, CheckCircle2, Award, Lock, Table } from 'lucide-react';
 
 interface NavbarProps {
   onScrollToOffers: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onScrollToOffers }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onScrollToOffers, onOpenAdmin }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       {/* Top Urgent Trust Announcement Bar */}
@@ -62,6 +63,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToOffers }) => {
             <ShoppingBag className="w-4 h-4" />
             <span>اطلب الآن (الدفع عند الاستلام)</span>
           </button>
+
+          {/* Admin Dashboard Trigger */}
+          {onOpenAdmin && (
+            <button
+              id="nav-admin-dashboard-btn"
+              onClick={onOpenAdmin}
+              className="p-2.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              title="لوحة تحكم الطلبات وشيت Google (الرمز: 1234)"
+            >
+              <Lock className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </nav>
     </header>

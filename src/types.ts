@@ -47,6 +47,25 @@ export interface OrderFormData {
   notes?: string;
 }
 
+export type OrderStatus = 'new' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface OrderRecord {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  fullName: string;
+  phone: string;
+  city: string;
+  address: string;
+  packageId: string;
+  packageName: string;
+  price: number;
+  quantity: number;
+  status: OrderStatus;
+  notes?: string;
+  syncedToSheets?: boolean;
+}
+
 export type VoiceName = 'Kore' | 'Zephyr' | 'Puck' | 'Fenrir' | 'Charon';
 
 export interface TTSState {

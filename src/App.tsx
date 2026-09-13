@@ -15,10 +15,12 @@ import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
 import { MobileStickyBar } from './components/MobileStickyBar';
 import { LiveOrderToast } from './components/LiveOrderToast';
+import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { PACKAGE_OFFERS } from './data/content';
 
 export default function App() {
   const [selectedPackId, setSelectedPackId] = useState<string>('pack-2'); // Best seller pack default (2 bottles)
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   const selectedOffer = PACKAGE_OFFERS.find((p) => p.id === selectedPackId) || PACKAGE_OFFERS[1];
 
@@ -39,7 +41,10 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-200 selection:text-blue-900 font-['Tajawal',sans-serif]">
       {/* Top Header Navigation */}
-      <Navbar onScrollToOffers={scrollToOffers} />
+      <Navbar
+        onScrollToOffers={scrollToOffers}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+      />
 
       {/* Main Content Sections */}
       <main className="flex-1">
@@ -87,7 +92,11 @@ export default function App() {
       </main>
 
       {/* Trust-rich Footer */}
-      <Footer onScrollToTop={scrollToTop} onScrollToOffers={scrollToOffers} />
+      <Footer
+        onScrollToTop={scrollToTop}
+        onScrollToOffers={scrollToOffers}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+      />
 
       {/* Mobile Sticky Bar for quick conversions */}
       <MobileStickyBar
@@ -97,6 +106,12 @@ export default function App() {
 
       {/* Real-time social proof toast for recent orders in Morocco */}
       <LiveOrderToast />
+
+      {/* Admin CRM and Google Sheets Sync Modal */}
+      <AdminDashboardModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+      />
     </div>
   );
 }

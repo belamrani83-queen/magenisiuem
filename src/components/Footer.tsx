@@ -4,9 +4,10 @@ import { ShieldCheck, Truck, MessageCircle, Heart, ArrowUp, Moon } from 'lucide-
 interface FooterProps {
   onScrollToTop: () => void;
   onScrollToOffers: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onScrollToTop, onScrollToOffers }) => {
+export const Footer: React.FC<FooterProps> = ({ onScrollToTop, onScrollToOffers, onOpenAdmin }) => {
   return (
     <footer className="bg-slate-950 text-white pt-14 pb-24 border-t border-slate-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -114,13 +115,25 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToTop, onScrollToOffers 
             جميع الحقوق محفوظة © {new Date().getFullYear()} Magnesium Complex. مكمل غذائي مرخص لدعم العضلات، الأعصاب، وجودة النوم.
           </p>
 
-          <button
-            onClick={onScrollToTop}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <span>الرجوع للأعلى</span>
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-4">
+            {onOpenAdmin && (
+              <button
+                id="footer-admin-link"
+                onClick={onOpenAdmin}
+                className="text-slate-500 hover:text-slate-300 transition-colors cursor-pointer text-xs"
+              >
+                🔐 لوحة إدارة الطلبات & Google Sheets
+              </button>
+            )}
+
+            <button
+              onClick={onScrollToTop}
+              className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <span>الرجوع للأعلى</span>
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </footer>
