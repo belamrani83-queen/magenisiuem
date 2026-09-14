@@ -1817,6 +1817,53 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                     </div>
                   </div>
                 </div>
+
+                {/* OPTION 3: TIKTOK PIXEL TRACKING */}
+                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs">
+                      ♪
+                    </div>
+                    <div>
+                      <h5 className="text-base font-black text-slate-900">
+                        تتبع إعلانات تيك توك (TikTok Pixel Active)
+                      </h5>
+                      <p className="text-xs text-slate-500">
+                        البيكسل متصل ومربوط تلقائياً لتتبع الزيارات، بدء الطلب، والشراء بالدرهم المغربي
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-bold text-slate-500">TikTok Pixel ID المفعّل:</div>
+                      <div className="text-sm font-mono font-black text-slate-900 mt-0.5 select-all">
+                        DAASFM3C77U21D59SVRG
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        نشط وشغال (Active)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <div className="font-bold text-slate-800">1. PageView</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">عند دخول الزبون للموقع</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <div className="font-bold text-slate-800">2. InitiateCheckout</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">عند البدء في كتابة الاسم/الهاتف</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <div className="font-bold text-emerald-900">3. CompletePayment</div>
+                      <div className="text-[11px] text-emerald-700 mt-0.5">عند تأكيد الطلب مع الثمن بـ MAD</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

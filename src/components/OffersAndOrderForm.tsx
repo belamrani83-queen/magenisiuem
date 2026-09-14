@@ -3,6 +3,7 @@ import { ShoppingBag, CheckCircle2, ShieldCheck, Truck, Gift, Star, MessageCircl
 import { PACKAGE_OFFERS, MOROCCAN_CITIES } from '../data/content';
 import { PackageOffer } from '../types';
 import { submitCustomerOrder } from '../lib/orderService';
+import { trackTikTokPurchase, trackTikTokInitiateCheckout } from '../lib/tiktokPixel';
 
 interface OffersAndOrderFormProps {
   selectedPackId: string;
@@ -84,10 +85,24 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
         notes: formData.notes,
       });
 
+      // Fire TikTok Pixel Purchase event on success
+      trackTikTokPurchase(
+        result.orderNumber,
+        selectedOffer.title,
+        selectedOffer.price,
+        selectedOffer.bottlesCount
+      );
+
       setOrderSuccess(result.orderNumber);
     } catch (err: any) {
       // Even if unexpected error occurs, assign an order number so the client has confirmation
       const fallbackNumber = 'MG-' + Math.floor(100000 + Math.random() * 900000);
+      trackTikTokPurchase(
+        fallbackNumber,
+        selectedOffer.title,
+        selectedOffer.price,
+        selectedOffer.bottlesCount
+      );
       setOrderSuccess(fallbackNumber);
     } finally {
       setIsSubmitting(false);
@@ -383,6 +398,7 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
                   required
                   placeholder="مثال: يوسف العلمي"
                   value={formData.fullName}
+                  onFocus={() => trackTikTokInitiateCheckout(selectedOffer.title, selectedOffer.price)}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-medium text-slate-900 bg-slate-50/50 transition-all outline-none"
                 />
