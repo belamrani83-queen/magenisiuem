@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { PainPointsSection } from './components/PainPointsSection';
@@ -25,6 +25,30 @@ export default function App() {
   const [selectedPackId, setSelectedPackId] = useState<string>('pack-2'); // Best seller pack default (2 bottles)
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
+  // Allow admin access via URL hash (#admin) or keyboard shortcut (Ctrl+Shift+A)
+  useEffect(() => {
+    const checkAdminHash = () => {
+      if (window.location.hash === '#admin' || window.location.search.includes('admin=true')) {
+        setIsAdminOpen(true);
+      }
+    };
+    checkAdminHash();
+    window.addEventListener('hashchange', checkAdminHash);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('hashchange', checkAdminHash);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const selectedOffer = PACKAGE_OFFERS.find((p) => p.id === selectedPackId) || PACKAGE_OFFERS[1];
 
   const scrollToOffers = () => {
@@ -43,10 +67,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-200 selection:text-blue-900 font-['Tajawal',sans-serif]">
-      {/* Top Header Navigation */}
+      {/* Top Header Navigation (Clean for customers, no admin icon) */}
       <Navbar
         onScrollToOffers={scrollToOffers}
-        onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
       {/* Main Content Sections */}
