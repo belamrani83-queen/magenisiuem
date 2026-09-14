@@ -30,8 +30,18 @@ import {
   PackageX,
   ArrowUpRight,
   HelpCircle,
-  Save
+  Save,
+  LogOut,
+  Sparkles,
 } from 'lucide-react';
+import { User } from 'firebase/auth';
+import { initAuth, googleSignIn, logout } from '../lib/googleAuth';
+import {
+  createOrdersSpreadsheet,
+  appendOrdersToGoogleSheet,
+  listUserSpreadsheets,
+  SheetFileItem,
+} from '../lib/googleSheetsApi';
 import { OrderRecord, OrderStatus, CodUnitCosts } from '../types';
 
 interface AdminDashboardModalProps {
@@ -106,6 +116,36 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     loading: false,
   });
   const [copiedCode, setCopiedCode] = useState(false);
+
+  // Google Authentication and Direct Sheets integration state
+  const [googleUser, setGoogleUser] = useState<User | null>(null);
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
+  const [isLoggingInGoogle, setIsLoggingInGoogle] = useState(false);
+  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+
+  // Connected spreadsheet
+  const [connectedSheet, setConnectedSheet] = useState<{ id: string; url: string; title: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem('connected_google_sheet');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [availableSheets, setAvailableSheets] = useState<SheetFileItem[]>([]);
+  const [isLoadingSheets, setIsLoadingSheets] = useState(false);
+  const [isCreatingSheet, setIsCreatingSheet] = useState(false);
+  const [isSyncingToSheet, setIsSyncingToSheet] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Confirmation dialog (Mandatory for mutating end-user Workspace data)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    actionLabel: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
 
   // New manual order state
   const [manualOrder, setManualOrder] = useState({
@@ -203,6 +243,167 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
       loadSettings();
     }
   }, [isOpen, isAuthenticated]);
+
+  // Google Auth lifecycle
+  useEffect(() => {
+    const unsubscribe = initAuth(
+      (user, token) => {
+        setGoogleUser(user);
+        setGoogleToken(token);
+        if (token) {
+          fetchUserSheets(token);
+        }
+      },
+      () => {
+        setGoogleUser(null);
+        setGoogleToken(null);
+      }
+    );
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    setIsLoggingInGoogle(true);
+    setGoogleAuthError(null);
+    try {
+      const res = await googleSignIn();
+      if (res) {
+        setGoogleUser(res.user);
+        setGoogleToken(res.accessToken);
+        fetchUserSheets(res.accessToken);
+      }
+    } catch (err: any) {
+      console.error('Google sign-in error:', err);
+      setGoogleAuthError(err.message || 'تعذر تسجيل الدخول بحساب Google');
+    } finally {
+      setIsLoggingInGoogle(false);
+    }
+  };
+
+  const handleGoogleSignOut = async () => {
+    await logout();
+    setGoogleUser(null);
+    setGoogleToken(null);
+  };
+
+  const fetchUserSheets = async (token?: string) => {
+    const activeToken = token || googleToken;
+    if (!activeToken) return;
+    setIsLoadingSheets(true);
+    try {
+      const files = await listUserSpreadsheets(activeToken);
+      setAvailableSheets(files);
+    } catch (err) {
+      console.error('Failed to list sheets:', err);
+    } finally {
+      setIsLoadingSheets(false);
+    }
+  };
+
+  const handleCreateNewSheet = () => {
+    if (!googleToken) {
+      handleGoogleSignIn();
+      return;
+    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'إنشاء جدول جديد في Google Sheets',
+      description:
+        'سيتم إنشاء جدول إكسل جديد باسم "طلبيات مكمل المغنيسيوم 2150mg" في حساب Google Drive الخاص بك مع تنسيق وتلوين العناوين باللغة العربية تلقائياً. هل تود المتابعة؟',
+      actionLabel: 'إنشاء الجدول الآن',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setIsCreatingSheet(true);
+        setSyncFeedback(null);
+        try {
+          const { spreadsheetId, spreadsheetUrl } = await createOrdersSpreadsheet(googleToken);
+          const sheetInfo = {
+            id: spreadsheetId,
+            url: spreadsheetUrl,
+            title: `طلبيات مكمل المغنيسيوم 2150mg (${new Date().toLocaleDateString('fr-FR')})`,
+          };
+          setConnectedSheet(sheetInfo);
+          localStorage.setItem('connected_google_sheet', JSON.stringify(sheetInfo));
+          setSyncFeedback({
+            success: true,
+            message: 'تم إنشاء وربط جدول Google Sheets بنجاح! يمكنك الآن مزامنة الطلبيات بضغطة واحدة.',
+          });
+          fetchUserSheets(googleToken);
+        } catch (err: any) {
+          setSyncFeedback({
+            success: false,
+            message: err.message || 'حدث خطأ أثناء إنشاء جدول Google Sheets',
+          });
+        } finally {
+          setIsCreatingSheet(false);
+        }
+      },
+    });
+  };
+
+  const handleSyncOrdersToSheet = () => {
+    if (!googleToken) {
+      handleGoogleSignIn();
+      return;
+    }
+    if (!connectedSheet) {
+      alert('المرجو إنشاء أو اختيار جدول Google Sheets أولاً');
+      return;
+    }
+    if (orders.length === 0) {
+      alert('لا توجد أي طلبيات حالياً للمزامنة');
+      return;
+    }
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'تأكيد مزامنة الطلبيات مع Google Sheets',
+      description: `سيتم إرسال وفحص ${orders.length} طلبية لإضافتها إلى جدول "${connectedSheet.title}". هل تود المتابعة؟`,
+      actionLabel: 'تأكيد المزامنة الآن',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setIsSyncingToSheet(true);
+        setSyncFeedback(null);
+        try {
+          const orderRows = orders.map((o) => ({
+            orderNumber: o.orderNumber,
+            createdAt: o.createdAt,
+            fullName: o.fullName,
+            phone: o.phone,
+            city: o.city,
+            address: o.address,
+            packageName: o.packageName,
+            quantity: o.quantity,
+            price: o.price,
+            status: o.status,
+            notes: o.notes,
+          }));
+
+          const res = await appendOrdersToGoogleSheet(googleToken, connectedSheet.id, orderRows);
+          if (res.addedCount > 0) {
+            setSyncFeedback({
+              success: true,
+              message: `تمت مزامنة ${res.addedCount} طلبية جديدة بنجاح في جدولك على Google Sheets!`,
+            });
+          } else {
+            setSyncFeedback({
+              success: true,
+              message: 'جميع الطلبيات الحالية مسجلة مسبقاً في جدول Google Sheets (لا توجد طلبات جديدة غير مضافة).',
+            });
+          }
+        } catch (err: any) {
+          setSyncFeedback({
+            success: false,
+            message: err.message || 'فشلت عملية المزامنة مع Google Sheets',
+          });
+        } finally {
+          setIsSyncingToSheet(false);
+        }
+      },
+    });
+  };
 
   const handleSaveCodCosts = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -610,7 +811,11 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                   <span>ربط Google Sheets</span>
-                  {webhookUrl && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
+                  {connectedSheet ? (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500"></span>
+                  ) : webhookUrl ? (
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  ) : null}
                 </button>
 
                 <button
@@ -636,6 +841,21 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
                 </button>
+
+                {connectedSheet && (
+                  <button
+                    onClick={handleSyncOrdersToSheet}
+                    disabled={isSyncingToSheet || orders.length === 0}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    title={`مزامنة سريعة لجميع الطلبيات إلى ${connectedSheet.title}`}
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-emerald-300 ${isSyncingToSheet ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">
+                      {isSyncingToSheet ? 'جاري المزامنة...' : 'مزامنة مع Google Sheets'}
+                    </span>
+                    <span className="sm:hidden">مزامنة</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleExportCSV}
@@ -1214,30 +1434,282 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
             {/* TAB 3: GOOGLE SHEETS SETUP */}
             {activeTab === 'sheets' && (
               <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6 flex-1">
+                {/* Header Banner */}
                 <div className="bg-emerald-900 text-white rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden">
                   <div className="relative z-10 max-w-2xl">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-800 text-emerald-200 mb-3 border border-emerald-700">
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-300" />
-                      الربط التلقائي مع Google Sheets
+                      الربط المباشر مع Google Sheets و Drive
                     </span>
                     <h4 className="text-xl sm:text-2xl font-black text-white leading-snug">
-                      تسجيل كل طلب جديد في جدول Google Sheets فالحين!
+                      ربط وتصدير الطلبيات في جدول Google Sheets بضغطة زر واحدة!
                     </h4>
                     <p className="text-xs sm:text-sm text-emerald-100 mt-2 leading-relaxed">
-                      بمجرد ربط الرابط هنا، أي زبون يضغط على "تأكيد الطلب" في الموقع، سيتم إضافة سطر جديد فورياً في جدول إكسل ديالك على Google Drive بالاسم والهاتف والمدينة والباقة.
+                      تم تفعيل صلاحيات Google Workspace بنجاح. سجل دخولك بحساب Google لإنشاء جدول إكسل جديد أو اختيار جدول موجود على درايف لمزامنة جميع بيانات الزبائن تلقائياً.
                     </p>
                   </div>
                 </div>
 
+                {/* DIRECT GOOGLE SHEETS INTEGRATION (RECOMMENDED) */}
+                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-emerald-200 shadow-sm space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs">
+                        1
+                      </div>
+                      <div>
+                        <h5 className="text-base font-black text-slate-900">
+                          الربط المباشر عبر حساب Google (الخيار الأسهل)
+                        </h5>
+                        <p className="text-xs text-slate-500">
+                          بدون نسخ أي كود، يتصل بـ Google Drive و Google Sheets مباشرة وبشكل آمن
+                        </p>
+                      </div>
+                    </div>
+
+                    {googleUser && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-600 bg-slate-100 py-1 px-3 rounded-full flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>متصل: {googleUser.email}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleGoogleSignOut}
+                          className="text-xs font-bold text-slate-500 hover:text-rose-600 py-1 px-2 rounded-lg hover:bg-rose-50 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>خروج</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {!googleUser ? (
+                    <div className="text-center py-6 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white shadow-xs border border-slate-200 flex items-center justify-center mx-auto text-emerald-600">
+                        <FileSpreadsheet className="w-6 h-6" />
+                      </div>
+                      <div className="max-w-md mx-auto space-y-1">
+                        <h6 className="text-sm font-black text-slate-900">
+                          سجل الدخول بحساب Google لربط الجداول فوراً
+                        </h6>
+                        <p className="text-xs text-slate-500">
+                          اضغط على الزر أدناه لتفويض التطبيق بإضافة وحفظ بيانات الطلبيات في جدولك على Google Drive
+                        </p>
+                      </div>
+
+                      <div className="pt-2 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={handleGoogleSignIn}
+                          disabled={isLoggingInGoogle}
+                          className="gsi-material-button shadow-xs cursor-pointer"
+                        >
+                          <div className="gsi-material-button-state"></div>
+                          <div className="gsi-material-button-content-wrapper">
+                            <div className="gsi-material-button-icon">
+                              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style={{ display: 'block' }}>
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                                <path fill="none" d="M0 0h48v48H0z"></path>
+                              </svg>
+                            </div>
+                            <span className="gsi-material-button-contents">
+                              {isLoggingInGoogle ? 'جاري الاتصال بحساب Google...' : 'Sign in with Google (تسجيل الدخول مع Google)'}
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+
+                      {googleAuthError && (
+                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold max-w-md mx-auto">
+                          {googleAuthError}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Connected Sheet Info or Creation Options */}
+                      {connectedSheet ? (
+                        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                              <div>
+                                <span className="text-[11px] font-black uppercase text-emerald-700 block">
+                                  الجدول المربوط حالياً:
+                                </span>
+                                <span className="text-sm font-black text-slate-900">
+                                  {connectedSheet.title}
+                                </span>
+                              </div>
+                            </div>
+
+                            <a
+                              href={connectedSheet.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-1.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-emerald-700 font-bold text-xs border border-emerald-300 flex items-center gap-1 shadow-2xs transition-colors"
+                            >
+                              <span>فتح الجدول في Google Sheets</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={handleSyncOrdersToSheet}
+                              disabled={isSyncingToSheet || orders.length === 0}
+                              className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all cursor-pointer"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingToSheet ? 'animate-spin' : ''}`} />
+                              <span>
+                                {isSyncingToSheet
+                                  ? 'جاري فحص ومزامنة الطلبات...'
+                                  : `مزامنة جميع الطلبيات الآن (${orders.length} طلبية)`}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConnectedSheet(null);
+                                localStorage.removeItem('connected_google_sheet');
+                              }}
+                              className="py-2.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs border border-slate-200 transition-colors cursor-pointer"
+                            >
+                              تغيير الجدول
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Option A: Create New Sheet */}
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 space-y-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+                              <Sparkles className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h6 className="text-sm font-black text-slate-900">
+                                إنشاء جدول جديد على حسابك
+                              </h6>
+                              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                                سنقوم بإنشاء ملف Google Sheets مخصص ومنسق بالعناوين وألوان واضحة تلقائياً في درايف.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleCreateNewSheet}
+                              disabled={isCreatingSheet}
+                              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>{isCreatingSheet ? 'جاري الإنشاء على Drive...' : 'إنشاء جدول جديد تلقائياً'}</span>
+                            </button>
+                          </div>
+
+                          {/* Option B: Pick Existing Sheet */}
+                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center">
+                              <FileSpreadsheet className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h6 className="text-sm font-black text-slate-900">
+                                اختيار جدول موجود من Drive
+                              </h6>
+                              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                                اختر ملف إكسل موجود مسبقاً في حسابك ليتم إلحاق الطلبيات فيه مباشرة.
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-1.5">
+                                <select
+                                  onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    const target = availableSheets.find((s) => s.id === selectedId);
+                                    if (target) {
+                                      const info = {
+                                        id: target.id,
+                                        title: target.name,
+                                        url: target.webViewLink || `https://docs.google.com/spreadsheets/d/${target.id}/edit`,
+                                      };
+                                      setConnectedSheet(info);
+                                      localStorage.setItem('connected_google_sheet', JSON.stringify(info));
+                                    }
+                                  }}
+                                  defaultValue=""
+                                  className="flex-1 text-xs py-2 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                >
+                                  <option value="" disabled>
+                                    {isLoadingSheets ? 'جاري البحث في درايف...' : 'اختر جدولاً من حسابك...'}
+                                  </option>
+                                  {availableSheets.map((sheet) => (
+                                    <option key={sheet.id} value={sheet.id}>
+                                      {sheet.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => fetchUserSheets()}
+                                  disabled={isLoadingSheets}
+                                  className="p-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                                  title="تحديث قائمة الملفات"
+                                >
+                                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSheets ? 'animate-spin text-emerald-600' : ''}`} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sync Feedback Message */}
+                      {syncFeedback && (
+                        <div
+                          className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                            syncFeedback.success
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : 'bg-rose-50 text-rose-800 border border-rose-200'
+                          }`}
+                        >
+                          {syncFeedback.success ? (
+                            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                          )}
+                          <span>{syncFeedback.message}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* OPTION 2: WEBHOOK & APPS SCRIPT URL */}
                 <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
-                  <h5 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <span>1. رابط الويب هوك (Google Webhook URL)</span>
-                  </h5>
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-black text-xs">
+                      2
+                    </div>
+                    <div>
+                      <h5 className="text-base font-black text-slate-900">
+                        الربط الاحتياطي عبر الويب هوك (Apps Script Webhook)
+                      </h5>
+                      <p className="text-xs text-slate-500">
+                        لتسجيل الطلبات تلقائياً في الخلفية فور إرسالها من الزبائن دون الحاجة لفتح لوحة التحكم
+                      </p>
+                    </div>
+                  </div>
 
                   <form onSubmit={handleSaveSettings} className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-600 mb-1.5">
-                        ألصق رابط نشر الويب هوك (Web App URL) من Apps Script هنا:
+                        رابط نشر الويب هوك (Web App URL) من Apps Script:
                       </label>
                       <input
                         type="url"
@@ -1249,13 +1721,13 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                       />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
                       <button
                         type="submit"
                         disabled={isSavingSettings}
-                        className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                        className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs shadow-xs transition-all cursor-pointer"
                       >
-                        {isSavingSettings ? 'جاري الحفظ...' : 'حفظ رابط Google Sheets'}
+                        {isSavingSettings ? 'جاري الحفظ...' : 'حفظ رابط الويب هوك'}
                       </button>
 
                       <button
@@ -1282,50 +1754,27 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                       </div>
                     )}
                   </form>
-                </div>
 
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h5 className="text-base font-black text-slate-900">
-                      2. طريقة تفعيل الكود في Google Sheets (في 2 دقائق):
-                    </h5>
-                    <button
-                      onClick={copyAppsScript}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center gap-1.5 border border-slate-300 cursor-pointer transition-colors"
-                    >
-                      {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedCode ? 'تم النسخ بنجاح!' : 'نسخ الكود'}</span>
-                    </button>
-                  </div>
+                  <div className="pt-3 border-t border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-800">
+                        كود Google Apps Script الجاهز:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={copyAppsScript}
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center gap-1.5 border border-slate-300 cursor-pointer transition-colors"
+                      >
+                        {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedCode ? 'تم النسخ بنجاح!' : 'نسخ الكود'}</span>
+                      </button>
+                    </div>
 
-                  <div className="space-y-2 text-xs text-slate-600 leading-relaxed">
-                    <p>
-                      <strong>الخطوة 1:</strong> افتح جدول جديد في <strong>Google Sheets</strong>.
-                    </p>
-                    <p>
-                      <strong>الخطوة 2:</strong> من القائمة العلوية اضغط على <strong>Extensions (الإضافات)</strong> ⬅ ثم <strong>Apps Script</strong>.
-                    </p>
-                    <p>
-                      <strong>الخطوة 3:</strong> امسح أي كود موجود في الصفحة، ثم ألصق الكود التالي:
-                    </p>
-                  </div>
-
-                  <div className="relative">
-                    <pre className="p-4 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl overflow-x-auto dir-ltr text-left border border-slate-800 max-h-56">
-                      {APPS_SCRIPT_TEMPLATE}
-                    </pre>
-                  </div>
-
-                  <div className="space-y-2 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
-                    <p>
-                      <strong>الخطوة 4:</strong> اضغط على زر <strong>Deploy (نشر)</strong> بالأزرق في الأعلى ⬅ <strong>New deployment (نشر جديد)</strong>.
-                    </p>
-                    <p>
-                      <strong>الخطوة 5:</strong> اختر نوع <strong>Web app</strong>، واجعل الخيار <em>Who has access</em> هو <strong>Anyone (أي شخص)</strong>.
-                    </p>
-                    <p>
-                      <strong>الخطوة 6:</strong> انسخ الرابط الذي سينتهي بـ <code>/exec</code> وألصقه في الخانة بالأعلى ثم اضغط حفظ! ✅
-                    </p>
+                    <div className="relative">
+                      <pre className="p-4 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl overflow-x-auto dir-ltr text-left border border-slate-800 max-h-48">
+                        {APPS_SCRIPT_TEMPLATE}
+                      </pre>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1445,6 +1894,39 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Workspace Action Confirmation Dialog */}
+        {confirmDialog && confirmDialog.isOpen && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-right">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-1">
+                <FileSpreadsheet className="w-6 h-6" />
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 text-center">
+                {confirmDialog.title}
+              </h3>
+              <p className="text-xs text-slate-600 text-center leading-relaxed">
+                {confirmDialog.description}
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDialog(null)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs cursor-pointer transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={() => confirmDialog.onConfirm()}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 cursor-pointer transition-colors"
+                >
+                  {confirmDialog.actionLabel}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
