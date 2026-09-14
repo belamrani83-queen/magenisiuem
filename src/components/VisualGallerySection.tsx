@@ -10,7 +10,7 @@ export const VisualGallerySection: React.FC<{ onScrollToOffers: () => void }> = 
       tag: 'صورة المنتج الرسمية',
       title: 'العلبة الأصلية Magnesium Complex 2150mg',
       description: 'تصميم صيدلاني معتمد بتركيز قوي 2150mg مع 30 كبسولة نباتية مركزة تكفي لشهر كامل، تجمع بين Glycinate و Malate مع فيتامين D3 وخلاصات الخضار والبذور الحية.',
-      image: '/src/assets/images/magnesium_exact_bottle_1789340675597.jpg',
+      image: '/images/magnesium_exact_bottle_1789340675597.jpg',
       badge: 'الأصلي 2150mg',
     },
     {
@@ -18,7 +18,7 @@ export const VisualGallerySection: React.FC<{ onScrollToOffers: () => void }> = 
       tag: 'كبسولات نباتية نقية',
       title: 'مكمل طبيعي بمكونات مختارة بعناية (30 كبسولة)',
       description: 'كبسولات نباتية سريعة التحلل والامتصاص، بدون كائنات معدلة وراثياً، خالية من الغلوتين، ولطيفة بنسبة 100% على المعدة دون أي إسهال.',
-      image: '/src/assets/images/open_bottle_capsules_1789339349497.jpg',
+      image: '/images/open_bottle_capsules_1789339349497.jpg',
       badge: '30 كبسولة نباتية',
     },
     {
@@ -26,7 +26,7 @@ export const VisualGallerySection: React.FC<{ onScrollToOffers: () => void }> = 
       tag: 'المكونات والأغذية الفائقة',
       title: 'مكونات طبيعية مرافقة للعلبة الأصلية',
       description: 'تركيبة غذائية متوازنة تجمع بين السبانخ، البروكلي وبذور اليقطين الطبيعية إلى جانب فيتامين D3 لتعزيز امتصاص كبسولات المغنيسيوم في الجسم بشكل طبيعي.',
-      image: '/src/assets/images/prod_ingredients_display_1789340878650.jpg',
+      image: '/images/prod_ingredients_display_1789340878650.jpg',
       badge: 'طبيعي 100%',
     },
     {
@@ -34,7 +34,7 @@ export const VisualGallerySection: React.FC<{ onScrollToOffers: () => void }> = 
       tag: 'التغليف والتوصيل بالمغرب',
       title: 'علبة المنتج الأصلية داخل طرد التوصيل المحمي',
       description: 'تصلك علبة المغنيسيوم الأصلية داخل كرتون شحن محكم ومغلف بطبقات حماية هوائية لضمان سلامتها حتى باب منزلك مع فحص الطلبية قبل الدفع.',
-      image: '/src/assets/images/prod_packaging_box_1789340865379.jpg',
+      image: '/images/prod_packaging_box_1789340865379.jpg',
       badge: 'توصيل مجاني لجميع المدن',
     },
   ];

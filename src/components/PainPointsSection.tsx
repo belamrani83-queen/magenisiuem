@@ -9,10 +9,11 @@ export const PainPointsSection: React.FC<PainPointsSectionProps> = ({ onScrollTo
   const painPoints = [
     {
       id: 'insomnia',
-      icon: <Moon className="w-8 h-8 text-indigo-600" />,
-      tag: 'الأرق وتقلب الفراش',
-      title: 'كترمي راسك فالسرير وكتجلس تدور ساعتين وما كيجيكش النعاس؟',
-      description: 'كتغمض عينيك ولكن عقلك باقي شغال بالتفكير، كتفيق مفزوع فأنصاص الليالي، والصباح كتفيق عيان كثر من فاش نعستي.',
+      icon: <Moon className="w-6 h-6 text-indigo-600" />,
+      image: '/images/person_insomnia_bed_1789414618998.jpg',
+      tag: 'الأرق وصعوبة النوم',
+      title: 'كترمي راسك فالسرير وكتجلس تدور ساعتين وعقلك شغال بالتفكير؟',
+      description: 'كتغمض عينيك والعقل ما كايرتاحش، كتفيق مفزوع بالليل والصباح كتفيق عيان ومسخسخ كأنك ما نعستيش.',
       stat: '78% من المغاربة',
       statLabel: 'يعانون من اضطراب النوم بسبب نقص المغنيسيوم',
       bgColor: 'bg-indigo-50/70',
@@ -20,24 +21,38 @@ export const PainPointsSection: React.FC<PainPointsSectionProps> = ({ onScrollTo
     },
     {
       id: 'cramps',
-      icon: <Zap className="w-8 h-8 text-amber-600" />,
+      icon: <Zap className="w-6 h-6 text-amber-600" />,
+      image: '/images/person_leg_cramp_1789414634861.jpg',
       tag: 'تشنجات العضلات (Les Crampes)',
-      title: 'كيجيك داك التشنج المفاجئ فالساق أو الكتف كيوقفك قفزة؟',
-      description: 'تقلصات عضلية مؤلمة بلا سابق إنذار بالليل أو بعد مجهود بسيط، مع تيبس فالرقبة والظهر بسبب حرمان الألياف العضلية من الاسترخاء.',
-      stat: 'أكثر من 300 تفاعل',
-      statLabel: 'حيوي يتوقف في عضلاتك عند نقص المغنيسيوم',
+      title: 'داك التشنج المباغت فالساق أو الكتف كيوقفك قفزة بالليل؟',
+      description: 'ألم حاد ومفاجئ يخلي عضلاتك مصلبة مع تيبس بالرقبة والظهر بسبب حرمان العضلات من معدن الاسترخاء.',
+      stat: 'أكثر من 300 وظيفة حيوية',
+      statLabel: 'تتوقف في عضلاتك بمجرد نقص المغنيسيوم',
       bgColor: 'bg-amber-50/70',
       borderColor: 'border-amber-200',
     },
     {
       id: 'fatigue',
-      icon: <BatteryLow className="w-8 h-8 text-rose-600" />,
+      icon: <BatteryLow className="w-6 h-6 text-slate-700" />,
+      image: '/images/person_fatigue_drain_1789414650138.jpg',
       tag: 'العياء المزمن وفقدان الطاقة',
-      title: 'كتفيق الصباح مسخسخ وعظامك فاشلين وبلا خاطر؟',
-      description: 'إحساس مستمر بالإرهاق، عصبية سريعة وتوتر على أبسط الأشياء، وصعوبة فالتركيز فالخدمة بحال يلا طاقتك مسالية من أول النهار.',
-      stat: 'نقص حاد في ATP',
-      statLabel: 'المسؤول عن إنتاج الطاقة في كل خلية بجسمك',
-      bgColor: 'bg-rose-50/70',
+      title: 'كتفيق الصباح فاشل ومسخسخ وبلا خاطر لأبسط حاجة؟',
+      description: 'عصبية سريعة، دوخة خفيفة، وصعوبة فالتركيز بحال طاقتك سالات من أول النهار قبل ما تبدا.',
+      stat: 'انخفاض مباشر في إنتاج طاقة ATP',
+      statLabel: 'المسؤولة عن حيوية ونشاط كل خلية في جسمك',
+      bgColor: 'bg-slate-50',
+      borderColor: 'border-slate-200',
+    },
+    {
+      id: 'migraine',
+      icon: <AlertCircle className="w-6 h-6 text-rose-600" />,
+      image: '/images/person_migraine_head_1789414662889.jpg',
+      tag: 'الشقيقة والصداع العصبي',
+      title: 'ألم نابض فجهة من راسك كيخليك ما قادرش حتى تحل عينيك؟',
+      description: 'حساسية مفرطة من الضوء والصوت، وغثيان كيوقفك على نهارك وما كينفع معاه حتى مسكن مؤقت.',
+      stat: 'نقص المغنيسيوم يسبب تشنج شرايين المخ',
+      statLabel: 'المسبب الرئيسي لنوبات الصداع والشقيقة الحادة',
+      bgColor: 'bg-rose-50/80',
       borderColor: 'border-rose-200',
     },
   ];
@@ -61,24 +76,29 @@ export const PainPointsSection: React.FC<PainPointsSectionProps> = ({ onScrollTo
           </p>
         </div>
 
-        {/* 3 Pain Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {/* 4 Pain Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
           {painPoints.map((item) => (
             <div
               key={item.id}
-              className={`p-6 rounded-3xl border ${item.borderColor} ${item.bgColor} flex flex-col justify-between hover:shadow-md transition-all`}
+              className={`p-5 rounded-3xl border ${item.borderColor} ${item.bgColor} flex flex-col justify-between hover:shadow-md transition-all overflow-hidden`}
             >
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white shadow-xs border border-slate-200 flex items-center justify-center">
+                {/* Photo preview for quick visual understanding */}
+                <div className="relative rounded-2xl overflow-hidden aspect-video mb-4 bg-slate-200 border border-slate-200 shadow-xs">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2.5 right-2.5 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs flex items-center gap-1.5 text-slate-800 text-xs font-black">
                     {item.icon}
+                    <span>{item.tag}</span>
                   </div>
-                  <span className="text-[11px] font-black text-slate-700 bg-white/90 px-3 py-1 rounded-full border border-slate-200 shadow-xs">
-                    {item.tag}
-                  </span>
                 </div>
 
-                <h3 className="text-lg font-black text-slate-900 leading-snug mb-2.5">
+                <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug mb-2">
                   {item.title}
                 </h3>
 

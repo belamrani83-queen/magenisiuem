@@ -269,7 +269,7 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
             <div className="flex items-center justify-center gap-3 p-3 mb-4 rounded-2xl bg-blue-50/80 border border-blue-200">
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-blue-200 shrink-0 shadow-xs">
                 <img
-                  src="/src/assets/images/magnesium_exact_bottle_1789340675597.jpg"
+                  src="/images/magnesium_exact_bottle_1789340675597.jpg"
                   alt="Magnesium Complex 2150mg"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"

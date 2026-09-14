@@ -7,21 +7,24 @@ export const HowToUseSection: React.FC = () => {
       step: '01',
       title: 'الجرعة اليومية البسيطة',
       desc: 'تناول كبسولة واحدة (1) فقط يومياً مع كأس كبير من الماء. العلبة تحتوي على 30 كبسولة نباتية مركزة تكفي لشهر كامل من الاستعمال المنتظم.',
-      icon: <Droplets className="w-6 h-6 text-blue-600" />,
+      icon: <Droplets className="w-5 h-5 text-blue-600" />,
+      image: '/images/open_bottle_capsules_1789339349497.jpg',
       badge: 'كبسولة يومياً (30 كبسولة)',
     },
     {
       step: '02',
       title: 'أفضل توقيت لأقصى فائدة',
       desc: 'يفضل أخذ الكبسولة مساءً قبل النوم بـ 30 إلى 45 دقيقة لتهدئة الجهاز العصبي والدخول في نوم عميق، أو بعد وجبة الإفطار لدعم طاقة العضلات طوال اليوم.',
-      icon: <Clock className="w-6 h-6 text-indigo-600" />,
+      icon: <Clock className="w-5 h-5 text-indigo-600" />,
+      image: 'https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=600&q=80',
       badge: 'راحة ونوم عميق',
     },
     {
       step: '03',
       title: 'الاستمرارية والنتائج التراكمية',
       desc: 'ستشعر باسترخاء العضلات واختفاء التشنجات من الأيام الأولى. ولإعادة ملء مخازن المغنيسيوم في خلاياك بشكل دائم، ينصح بإتمام كورس شهرين (علبتين).',
-      icon: <CalendarCheck className="w-6 h-6 text-emerald-600" />,
+      icon: <CalendarCheck className="w-5 h-5 text-emerald-600" />,
+      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
       badge: 'نتائج مستدامة',
     },
   ];
@@ -47,22 +50,27 @@ export const HowToUseSection: React.FC = () => {
           {steps.map((s) => (
             <div
               key={s.step}
-              className="relative p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between"
+              className="relative p-5 rounded-3xl bg-slate-50 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
             >
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center">
+                {/* Visual Step Illustration Image */}
+                <div className="relative rounded-2xl overflow-hidden aspect-video mb-4 bg-slate-200 border border-slate-200 shadow-xs">
+                  <img
+                    src={s.image}
+                    alt={s.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2.5 right-2.5 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs flex items-center gap-1.5 text-blue-900 text-xs font-black">
                     {s.icon}
+                    <span>{s.badge}</span>
                   </div>
-                  <span className="text-xs font-black text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
-                    {s.badge}
-                  </span>
+                  <div className="absolute bottom-2.5 left-2.5 bg-slate-950/80 text-white font-mono text-xs font-black px-2 py-0.5 rounded-md">
+                    خطوة {s.step}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-black text-slate-400 font-mono">خطوة {s.step}</span>
-                  <h3 className="text-base font-black text-slate-900">{s.title}</h3>
-                </div>
+                <h3 className="text-base font-black text-slate-900 mb-1.5">{s.title}</h3>
 
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                   {s.desc}
@@ -71,7 +79,7 @@ export const HowToUseSection: React.FC = () => {
 
               <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>لطيف 100% على المعدة</span>
+                <span>لطيف 100% على المعدة وسهل البلع</span>
               </div>
             </div>
           ))}

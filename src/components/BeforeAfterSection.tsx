@@ -6,6 +6,11 @@ export const BeforeAfterSection: React.FC<{ onScrollToOffers: () => void }> = ({
 
   const comparisons = [
     {
+      title: 'الشقيقة ونوبات الصداع النصفي',
+      before: 'ألم نابض فظيع في نصف الرأس، حساسية من الضوء والصوت، غثيان وتوقف كلي عن ممارسة أنشطة اليوم.',
+      after: 'ارتخاء في شرايين الدماغ، استقرار في النواقل العصبية، واختفاء نوبات الشقيقة بنسبة تزيد عن 85%.',
+    },
+    {
       title: 'جودة النوم والاستيقاظ الصباحي',
       before: 'أرق، تقلب مستمر فالفراش، استيقاظ مفزوع ومتقطع، وتستيقظ متعباً ومسخسخاً كأنك لم تنم.',
       after: 'استرخاء عضلي وعصبي كامل، نوم عميق متواصل لـ 7-8 ساعات، واستيقاظ حيوي وطاقة متدفقة.',
@@ -62,7 +67,7 @@ export const BeforeAfterSection: React.FC<{ onScrollToOffers: () => void }> = ({
             {/* Real Image of Exhaustion/Insomnia */}
             <div className="relative rounded-2xl overflow-hidden aspect-square sm:aspect-4/3 bg-slate-900 mb-5">
               <img
-                src="/src/assets/images/before_fatigue_stress_1789335649943.jpg"
+                src="/images/before_fatigue_stress_1789335649943.jpg"
                 alt="حالة التعب والأرق والصداع قبل أخذ المغنيسيوم"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-500"
@@ -76,6 +81,10 @@ export const BeforeAfterSection: React.FC<{ onScrollToOffers: () => void }> = ({
 
             {/* Symptoms Bullet points */}
             <div className="space-y-2.5 text-xs sm:text-sm text-slate-700">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-rose-50/70 border border-rose-100">
+                <span className="w-5 h-5 rounded-full bg-rose-200 text-rose-800 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">✗</span>
+                <span className="font-semibold text-rose-950">نوبات شقيقة متكررة وصداع نابض يجعلك عاجزاً عن العمل</span>
+              </div>
               <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-rose-50/70 border border-rose-100">
                 <span className="w-5 h-5 rounded-full bg-rose-200 text-rose-800 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">✗</span>
                 <span className="font-semibold text-rose-950">صعوبة في النوم والتقلب لساعات مع تفكير زائد وقلق</span>
@@ -107,7 +116,7 @@ export const BeforeAfterSection: React.FC<{ onScrollToOffers: () => void }> = ({
             {/* Real Image of Vitality/Deep Sleep */}
             <div className="relative rounded-2xl overflow-hidden aspect-square sm:aspect-4/3 bg-slate-900 mb-5">
               <img
-                src="/src/assets/images/after_energy_sleep_1789335662790.jpg"
+                src="/images/after_energy_sleep_1789335662790.jpg"
                 alt="الاستيقاظ بنشاط وطاقة ونوم هادئ بعد استعمال المغنيسيوم"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-500"
@@ -121,6 +130,10 @@ export const BeforeAfterSection: React.FC<{ onScrollToOffers: () => void }> = ({
 
             {/* Recovery Bullet points */}
             <div className="space-y-2.5 text-xs sm:text-sm text-slate-700">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                <span className="w-5 h-5 rounded-full bg-emerald-500 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">✓</span>
+                <span className="font-bold text-emerald-950">رأس خفيف وراحة تامة من نوبات الشقيقة والصداع المؤلم</span>
+              </div>
               <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
                 <span className="w-5 h-5 rounded-full bg-emerald-500 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">✓</span>
                 <span className="font-bold text-emerald-950">نوم عميق مسترسل وهادئ بدون تقطع ولا استيقاظ ليلي</span>

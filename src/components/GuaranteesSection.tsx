@@ -97,6 +97,46 @@ export const GuaranteesSection: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Reassurance visual break banner */}
+        <div className="mt-12 rounded-3xl overflow-hidden border border-slate-200 bg-linear-to-r from-slate-900 via-blue-950 to-slate-900 text-white shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center">
+            <div className="md:col-span-7 p-6 sm:p-10 space-y-4">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                🌱 صحتك وراحة بالك في أمان تام
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black leading-tight text-white">
+                ما تخسر والو: جرب كورس المغنيسيوم بكل ثقة وراحة بال
+              </h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                لا مخاطرة إطلاقاً: التوصيل حتى باب بيتك فابور، الدفع نقداً بعد المعاينة، وضمان كامل لاسترجاع مستحقاتك في حال عدم رضاك عن النتيجة. راحتك ونومك الهادئ هما غايتنا.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-2 text-xs font-bold text-blue-200">
+                <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  دفع عند الاستلام
+                </span>
+                <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                  <Award className="w-4 h-4 text-amber-400" />
+                  ضمان 30 يوماً
+                </span>
+                <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                  <Truck className="w-4 h-4 text-blue-400" />
+                  شحن مجاني لكافة المدن
+                </span>
+              </div>
+            </div>
+            <div className="md:col-span-5 h-64 md:h-full min-h-[260px] relative overflow-hidden">
+              <img
+                src="/images/before_after_split_1789335677840.jpg"
+                alt="راحة واسترخاء البال بدون أي مخاطرة"
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-slate-950/80 md:from-slate-900 via-transparent to-transparent"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

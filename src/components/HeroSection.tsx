@@ -39,51 +39,44 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </span>
             </div>
 
-            {/* Main Headline */}
+            {/* Main Headline & Hook */}
             <div>
-              <span className="text-blue-700 font-black text-sm sm:text-base tracking-wide block mb-1.5">
-                مغنيسيوم قوي لراحة يومك ودعم الجسم والعقل 🌿
-              </span>
+              <div className="inline-block bg-amber-100 text-amber-900 text-xs sm:text-sm font-black px-3.5 py-1.5 rounded-xl border border-amber-300/80 mb-3 shadow-xs">
+                ⚡ كتعاني من الأرق، الشقيقة، العياء الدائم، وتشنجات العضلات؟
+              </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.25] tracking-tight">
-                تهدئة فورية للأعصاب، نوم عميق بدون تقطع، واختفاء تام لتشنجات العضلات اليومية!
+                استرجع <span className="text-blue-700 underline decoration-blue-300">نومك العميق</span> وهدوء أعصابك، وتخلص نهائياً من الشقيقة، التشنجات والإرهاق!
               </h1>
             </div>
 
-            {/* Subheading with strong problem-solution framing */}
-            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
-              واش كتعاني من الأرق، الإرهاق المستمر، وتشنجات الساقين المزعجة ليلاً؟ جرب تركيبة المغنيسيوم المخلبية المتطورة التي تجمع بين <strong className="text-blue-700 font-black">Magnesium Glycinate + Malate</strong> مع فيتامين D3 وخلاصات الخضار والبذور الطبيعية. <span className="text-slate-900 font-bold">أعلى امتصاص حيوي، ولطيف 100% على المعدة بدون أي إسهال.</span>
-            </p>
-
-            {/* Value Points Checklist */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs text-sm font-bold text-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
-                  <Moon className="w-4 h-4" />
+            {/* Short punchy subhook - easy to read, low text, high impact */}
+            <div className="space-y-2.5">
+              <p className="text-sm sm:text-base font-bold text-slate-800 leading-snug">
+                كبسولة وحدة فاليوم كتعطيك راحة فورية متكاملة:
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm font-black text-slate-900">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+                  <span className="text-indigo-600 text-base">🌙</span>
+                  <span>نوم عميق وهادئ بدون تقطع فالفراش</span>
                 </div>
-                <span>نوم عميق وراحة للجهاز العصبي</span>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                  <Zap className="w-4 h-4" />
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+                  <span className="text-amber-500 text-base">⚡</span>
+                  <span>اختفاء تشنجات الساقين والظهر (Les crampes)</span>
                 </div>
-                <span>راحة فورية من تشنجات الساقين (Les crampes)</span>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+                  <span className="text-emerald-600 text-base">🔋</span>
+                  <span>طاقة ونشاط تفيق بيهم الصباح بلا عياء</span>
                 </div>
-                <span>امتصاص مخلبي نقي 0% إسهال أو حموضة</span>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                  <HeartPulse className="w-4 h-4" />
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+                  <span className="text-blue-600 text-base">🧠</span>
+                  <span>تهدئة الأعصاب والتخلص من الشقيقة والصداع</span>
                 </div>
-                <span>طاقة يومية ودعم صحة القلب وضغط الدم</span>
               </div>
             </div>
+
+            <p className="text-xs sm:text-base text-slate-600 font-medium">
+              تركيبة أمريكية مخلبية أصلية <strong className="text-blue-900 font-black">(Glycinate + Malate)</strong> أعلى امتصاص حيوي وخفيفة 100% على المعدة بدون إسهال.
+            </p>
 
             {/* Primary Action Buttons (Conversion Triggers) */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
@@ -138,7 +131,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <div className="relative rounded-2xl overflow-hidden aspect-square bg-gradient-to-b from-blue-50/50 to-slate-100 flex items-center justify-center">
                   <img
                     id="hero-product-image"
-                    src="/src/assets/images/magnesium_exact_bottle_1789340675597.jpg"
+                    src="/images/magnesium_exact_bottle_1789340675597.jpg"
                     alt="مكمل Magnesium Glycinate + Malate 2150mg مع فيتامين D3"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-500"

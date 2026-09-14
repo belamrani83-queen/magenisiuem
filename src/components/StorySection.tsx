@@ -33,7 +33,7 @@ export const StorySection: React.FC<StorySectionProps> = ({ onScrollToOffers }) 
             <div className="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 bg-slate-100 group">
               <img
                 id="story-vitality-image"
-                src="/src/assets/images/after_energy_sleep_1789335662790.jpg"
+                src="/images/after_energy_sleep_1789335662790.jpg"
                 alt="الاستيقاظ بنشاط وحيوية ونوم عميق بفضل المغنيسيوم"
                 referrerPolicy="no-referrer"
                 className="w-full h-auto aspect-4/3 object-cover group-hover:scale-102 transition-transform duration-500"
@@ -59,6 +59,21 @@ export const StorySection: React.FC<StorySectionProps> = ({ onScrollToOffers }) 
               <p className="text-sm text-slate-700 leading-relaxed font-medium">
                 المغنيسيوم يشارك في أكثر من <strong>300 تفاعل كيميائي حيوي</strong> داخل جسمك يومياً. نقصه هو السبب الأول وراء التوتر المستمر، التشنج العضلي (les crampes)، والصداع النصفي، وصعوبة الاسترخاء ليلاً.
               </p>
+            </div>
+
+            {/* Visual Photo: Moroccan active mother / family calm */}
+            <div className="relative rounded-2xl overflow-hidden aspect-video bg-slate-100 border border-slate-200 shadow-sm group">
+              <img
+                src="/images/happy_active_mother_1789160342317.jpg"
+                alt="راحة واسترخاء العائلة والنشاط اليومي مع المغنيسيوم"
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-3.5">
+                <span className="text-xs font-black text-white bg-slate-900/80 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+                  راحة البال وهدوء البيت بدون توتر أو عصبية 🌿
+                </span>
+              </div>
             </div>
 
             {/* Quick reassurance */}

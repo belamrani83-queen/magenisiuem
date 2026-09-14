@@ -76,6 +76,34 @@ export const IngredientsSection: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Stomach safety and pure vegetal capsules banner without any salad photo */}
+        <div className="mt-10 rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-right">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-black text-slate-900 text-base sm:text-lg">
+                كبسولات نباتية 100% نقية وسريعة الامتصاص
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                خالية تماماً من الغلوتين، السكر، والمواد الحافظة. تركيبة لطيفة 100% على المعدة والأمعاء بدون أي إسهال.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs font-black text-emerald-800 shrink-0">
+            <span className="bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs">
+              ✓ 0% إسهال أو حموضة
+            </span>
+            <span className="bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs">
+              ✓ خفيف وسهل البلع
+            </span>
+            <span className="bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs">
+              ✓ مناسب لمرضى السكري
+            </span>
+          </div>
+        </div>
       </div>
     </section>
   );

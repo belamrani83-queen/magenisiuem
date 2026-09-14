@@ -179,7 +179,7 @@ export const RealProofSection: React.FC<{ onScrollToOffers: () => void }> = ({ o
           <div className="md:col-span-5">
             <div className="relative rounded-2xl overflow-hidden aspect-2/3 bg-slate-900 shadow-inner group">
               <img
-                src="/src/assets/images/open_bottle_capsules_1789339349497.jpg"
+                src="/images/open_bottle_capsules_1789339349497.jpg"
                 alt="مكمل طبيعي بمكونات مختارة بعناية 30 كبسولة نباتية"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
