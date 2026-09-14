@@ -43,6 +43,7 @@ import {
   SheetFileItem,
 } from '../lib/googleSheetsApi';
 import { OrderRecord, OrderStatus, CodUnitCosts } from '../types';
+import { DEFAULT_GOOGLE_SHEETS_WEBHOOK, getLocalCachedOrders } from '../lib/orderService';
 
 interface AdminDashboardModalProps {
   isOpen: boolean;
@@ -201,11 +202,35 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
   const loadOrders = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/orders');
-      const data = await res.json();
-      if (data.success && Array.isArray(data.orders)) {
-        setOrders(data.orders);
+      const localOrders = getLocalCachedOrders();
+      let fetchedOrders: OrderRecord[] = [];
+
+      try {
+        const res = await fetch('/api/orders');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.orders)) {
+            fetchedOrders = data.orders;
+          }
+        }
+      } catch (e) {
+        console.warn('Backend orders fetch failed, using local orders cache', e);
       }
+
+      // Merge backend and local cache, avoiding duplicates by orderNumber
+      const orderMap = new Map<string, OrderRecord>();
+      fetchedOrders.forEach((o) => orderMap.set(o.orderNumber, o));
+      localOrders.forEach((o) => {
+        if (!orderMap.has(o.orderNumber)) {
+          orderMap.set(o.orderNumber, o);
+        }
+      });
+
+      const merged = Array.from(orderMap.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      setOrders(merged);
     } catch (err) {
       console.error('Failed to load orders', err);
     } finally {
@@ -215,25 +240,40 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
 
   const loadSettings = async () => {
     try {
+      // First check local connected sheet if any
+      const savedLocalSheet = localStorage.getItem('connected_google_sheet');
+      if (savedLocalSheet) {
+        try {
+          const parsed = JSON.parse(savedLocalSheet);
+          if (parsed.webhookUrl) {
+            setWebhookUrl(parsed.webhookUrl);
+          }
+        } catch {}
+      } else {
+        setWebhookUrl(DEFAULT_GOOGLE_SHEETS_WEBHOOK);
+      }
+
       const res = await fetch('/api/admin/settings');
-      const data = await res.json();
-      if (data.success) {
-        if (data.googleSheetsWebhookUrl) {
-          setWebhookUrl(data.googleSheetsWebhookUrl);
-        }
-        if (data.codCosts) {
-          setCodCosts({
-            productUnitCost: data.codCosts.productUnitCost ?? DEFAULT_COD_COSTS.productUnitCost,
-            shippingCostDelivered: data.codCosts.shippingCostDelivered ?? DEFAULT_COD_COSTS.shippingCostDelivered,
-            shippingCostReturned: data.codCosts.shippingCostReturned ?? DEFAULT_COD_COSTS.shippingCostReturned,
-            confirmationCallCost: data.codCosts.confirmationCallCost ?? DEFAULT_COD_COSTS.confirmationCallCost,
-            packagingCost: data.codCosts.packagingCost ?? DEFAULT_COD_COSTS.packagingCost,
-            adSpendPerLead: data.codCosts.adSpendPerLead ?? DEFAULT_COD_COSTS.adSpendPerLead,
-          });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          if (data.googleSheetsWebhookUrl) {
+            setWebhookUrl(data.googleSheetsWebhookUrl);
+          }
+          if (data.codCosts) {
+            setCodCosts({
+              productUnitCost: data.codCosts.productUnitCost ?? DEFAULT_COD_COSTS.productUnitCost,
+              shippingCostDelivered: data.codCosts.shippingCostDelivered ?? DEFAULT_COD_COSTS.shippingCostDelivered,
+              shippingCostReturned: data.codCosts.shippingCostReturned ?? DEFAULT_COD_COSTS.shippingCostReturned,
+              confirmationCallCost: data.codCosts.confirmationCallCost ?? DEFAULT_COD_COSTS.confirmationCallCost,
+              packagingCost: data.codCosts.packagingCost ?? DEFAULT_COD_COSTS.packagingCost,
+              adSpendPerLead: data.codCosts.adSpendPerLead ?? DEFAULT_COD_COSTS.adSpendPerLead,
+            });
+          }
         }
       }
     } catch (err) {
-      console.error('Failed to load settings', err);
+      console.warn('Using default/local settings on Vercel fallback', err);
     }
   };
 
