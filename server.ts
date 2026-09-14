@@ -126,11 +126,24 @@ async function sendToGoogleSheetsWebhook(order: any, webhookUrl: string): Promis
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(8000),
     });
 
-    return res.ok;
-  } catch (err) {
-    console.error("Google Sheets webhook dispatch failed:", err);
+    if (!res.ok) {
+      console.warn(`[Google Sheets Webhook]: HTTP ${res.status} returned from ${webhookUrl}`);
+      return false;
+    }
+
+    const text = await res.text();
+    // Google Drive error pages return HTML with status 200 or 403
+    if (text.includes("<!DOCTYPE") || text.includes("<html") || text.includes("errorMessage")) {
+      console.warn("[Google Sheets Webhook]: Received HTML error page from Google instead of JSON. Check Apps Script deployment permissions (Must be 'Anyone').");
+      return false;
+    }
+
+    return true;
+  } catch (err: any) {
+    console.error("Google Sheets webhook dispatch failed:", err.message || err);
     return false;
   }
 }
