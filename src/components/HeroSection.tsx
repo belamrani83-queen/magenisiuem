@@ -3,12 +3,10 @@ import { ShoppingBag, ShieldCheck, Truck, Star, ArrowDown, Moon, Zap, HeartPulse
 
 interface HeroSectionProps {
   onScrollToOffers: () => void;
-  onScrollToStory: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onScrollToOffers,
-  onScrollToStory,
 }) => {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-blue-50/70 via-indigo-50/20 to-white pt-6 pb-14 sm:pt-10 sm:pb-20 border-b border-slate-200">

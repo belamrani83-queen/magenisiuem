@@ -65,10 +65,7 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
       return;
     }
 
-    if (!formData.address.trim()) {
-      setErrorMessage('المرجو كتابة عنوان التوصيل (الحي أو الشارع)');
-      return;
-    }
+    const cleanAddress = formData.address.trim() || 'سيتم تأكيد العنوان بالهاتف مع الزبون';
 
     setIsSubmitting(true);
 
@@ -77,7 +74,7 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
         fullName: formData.fullName,
         phone: formData.phone,
         city: formData.city,
-        address: formData.address,
+        address: cleanAddress,
         packageId: selectedOffer.id,
         packageName: selectedOffer.title,
         totalPrice: selectedOffer.price,
@@ -85,12 +82,13 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
         notes: formData.notes,
       });
 
-      // Fire TikTok Pixel Purchase event on success
+      // Fire TikTok Pixel Purchase event on success with SKU
       trackTikTokPurchase(
         result.orderNumber,
         selectedOffer.title,
         selectedOffer.price,
-        selectedOffer.bottlesCount
+        selectedOffer.bottlesCount,
+        selectedOffer.sku || 'magnesium-glycinate'
       );
 
       setOrderSuccess(result.orderNumber);
@@ -101,7 +99,8 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
         fallbackNumber,
         selectedOffer.title,
         selectedOffer.price,
-        selectedOffer.bottlesCount
+        selectedOffer.bottlesCount,
+        selectedOffer.sku || 'magnesium-glycinate'
       );
       setOrderSuccess(fallbackNumber);
     } finally {
@@ -168,8 +167,8 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
           </div>
         </div>
 
-        {/* Big Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {/* Big Pricing Cards Grid - 2 Packages */}
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 mb-12">
           {PACKAGE_OFFERS.map((pack) => {
             const isSelected = selectedPackId === pack.id;
 
@@ -193,7 +192,7 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-extrabold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                      {pack.bottlesCount === 1 ? 'علبة واحدة (90 كبسولة)' : `${pack.bottlesCount} علب`}
+                      {pack.bottlesCount === 1 ? 'علبة واحدة (30 كبسولة)' : pack.bottlesCount === 2 ? 'علبتين (60 كبسولة)' : '3 علب (90 كبسولة)'}
                     </span>
                     <div
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
@@ -389,25 +388,27 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
 
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-extrabold text-slate-800 mb-1.5">
-                  2. الاسم الكامل *
+                <label className="block text-xs font-black text-slate-800 mb-1.5 flex items-center justify-between">
+                  <span>2. الاسم الكامل *</span>
+                  <span className="text-[11px] text-slate-400 font-normal">يكفي الاسم الأول والعائلي</span>
                 </label>
                 <input
                   id="order-fullname-input"
                   type="text"
                   required
-                  placeholder="مثال: يوسف العلمي"
+                  placeholder="مثال: سناء العلمي"
                   value={formData.fullName}
-                  onFocus={() => trackTikTokInitiateCheckout(selectedOffer.title, selectedOffer.price)}
+                  onFocus={() => trackTikTokInitiateCheckout(selectedOffer.title, selectedOffer.price, selectedOffer.sku || 'magnesium-glycinate')}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-medium text-slate-900 bg-slate-50/50 transition-all outline-none"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-bold text-slate-900 bg-white transition-all outline-none"
                 />
               </div>
 
               {/* Phone Number */}
               <div>
-                <label className="block text-xs font-extrabold text-slate-800 mb-1.5">
-                  3. رقم الهاتف (للتواصل وتأكيد الشحن) *
+                <label className="block text-xs font-black text-slate-800 mb-1.5 flex items-center justify-between">
+                  <span>3. رقم الهاتف للتوصيل *</span>
+                  <span className="text-[11px] text-emerald-700 font-bold">سنتصل بك لتأكيد الإرسال</span>
                 </label>
                 <input
                   id="order-phone-input"
@@ -416,20 +417,21 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
                   placeholder="06XXXXXXXX أو 07XXXXXXXX"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-medium text-slate-900 bg-slate-50/50 transition-all outline-none text-right dir-ltr"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-base font-bold text-slate-900 bg-white transition-all outline-none text-right dir-ltr placeholder:text-slate-400"
                 />
               </div>
 
               {/* City Selection */}
               <div>
-                <label className="block text-xs font-extrabold text-slate-800 mb-1.5">
-                  4. المدينة *
+                <label className="block text-xs font-black text-slate-800 mb-1.5 flex items-center justify-between">
+                  <span>4. المدينة *</span>
+                  <span className="text-[11px] text-blue-700 font-bold">توصيل مجاني لباب المنزل</span>
                 </label>
                 <select
                   id="order-city-select"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-medium text-slate-900 bg-slate-50/50 transition-all outline-none cursor-pointer"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-bold text-slate-900 bg-white transition-all outline-none cursor-pointer"
                 >
                   {MOROCCAN_CITIES.map((c) => (
                     <option key={c} value={c}>
@@ -439,35 +441,19 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
                 </select>
               </div>
 
-              {/* Address */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-800 mb-1.5">
-                  5. العنوان بالتفصيل للتوصيل إلى باب دارك *
-                </label>
-                <input
-                  id="order-address-input"
-                  type="text"
-                  required
-                  placeholder="الحي، رقم المنزل، أو الشارع..."
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm font-medium text-slate-900 bg-slate-50/50 transition-all outline-none"
-                />
-              </div>
-
               {/* Big High-Converting Submit Button */}
               <div className="pt-2">
                 <button
                   id="order-submit-btn"
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-black text-base sm:text-lg shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-base sm:text-lg shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.01]"
                 >
                   <ShoppingBag className="w-5 h-5" />
                   <span>
                     {isSubmitting
-                      ? 'جاري تسجيل طلبك...'
-                      : `تأكيد الطلب الآن (${selectedOffer.price} درهم فقط - شحن مجاني)`}
+                      ? 'جاري تأكيد طلبك...'
+                      : 'تأكيد الطلب - شحن مجاني'}
                   </span>
                 </button>
               </div>

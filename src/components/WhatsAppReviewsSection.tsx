@@ -33,7 +33,7 @@ export const WhatsAppReviewsSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-14 sm:py-20 bg-slate-100 border-b border-slate-200">
+    <section id="whatsapp-reviews-section" className="py-14 sm:py-20 bg-slate-100 border-b border-slate-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">

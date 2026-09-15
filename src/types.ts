@@ -6,6 +6,7 @@ export interface PackageOffer {
   price: number;
   originalPrice: number;
   saveAmount: number;
+  sku?: string;
   badge?: string;
   isPopular?: boolean;
   freeShipping: boolean;
@@ -68,6 +69,7 @@ export interface OrderRecord {
   address: string;
   packageId: string;
   packageName: string;
+  sku?: string;
   price: number;
   quantity: number;
   status: OrderStatus;

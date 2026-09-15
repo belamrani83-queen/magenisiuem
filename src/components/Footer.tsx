@@ -54,23 +54,23 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToTop, onScrollToOffers,
               <li>
                 <button
                   onClick={() => {
-                    const el = document.getElementById('story-section');
+                    const el = document.getElementById('benefits-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="hover:text-blue-400 transition-colors cursor-pointer"
                 >
-                  قصة التحسن والتخلص من الأرق
+                  الفوائد ومراحل التحسن
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => {
-                    const el = document.getElementById('ingredients-section');
+                    const el = document.getElementById('whatsapp-reviews-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="hover:text-blue-400 transition-colors cursor-pointer"
                 >
-                  المكونات والامتصاص الفائق
+                  آراء وتجارب الزبناء بالواتساب
                 </button>
               </li>
               <li>

@@ -99,13 +99,52 @@ export function trackTikTokPageView() {
 }
 
 /**
+ * Track ViewContent event when visitor lands and views the product offer
+ */
+export function trackTikTokViewContent(packageName: string = 'Magnesium Glycinate + Malate 2150mg', price: number = 229, sku: string = 'magnesium-glycinate') {
+  if (typeof window !== 'undefined' && window.ttq) {
+    try {
+      window.ttq.track('ViewContent', {
+        contents: [
+          {
+            content_id: sku,
+            content_type: 'product',
+            content_name: packageName,
+            quantity: 1,
+            price: Number(price) || 0,
+          },
+        ],
+        content_id: sku,
+        content_type: 'product',
+        content_name: packageName,
+        quantity: 1,
+        price: Number(price) || 0,
+        value: Number(price) || 0,
+        currency: 'MAD',
+      });
+    } catch (err) {
+      console.warn('TikTok ViewContent tracking error:', err);
+    }
+  }
+}
+
+/**
  * Track Initiate Checkout event when customer engages with order form
  */
-export function trackTikTokInitiateCheckout(packageName: string, price: number) {
+export function trackTikTokInitiateCheckout(packageName: string, price: number, sku: string = 'magnesium-glycinate') {
   if (typeof window !== 'undefined' && window.ttq) {
     try {
       window.ttq.track('InitiateCheckout', {
-        content_id: 'magnesium-complex-offer',
+        contents: [
+          {
+            content_id: sku,
+            content_type: 'product',
+            content_name: packageName || 'Magnesium Complex',
+            quantity: 1,
+            price: Number(price) || 0,
+          },
+        ],
+        content_id: sku,
         content_type: 'product',
         content_name: packageName || 'Magnesium Complex',
         quantity: 1,
@@ -122,12 +161,20 @@ export function trackTikTokInitiateCheckout(packageName: string, price: number) 
 /**
  * Track Purchase / Complete Payment when order is successfully placed
  */
-export function trackTikTokPurchase(orderNumber: string, packageName: string, price: number, quantity: number = 1) {
+export function trackTikTokPurchase(orderNumber: string, packageName: string, price: number, quantity: number = 1, sku: string = 'magnesium-glycinate') {
   if (typeof window !== 'undefined' && window.ttq) {
     try {
-      // CompletePayment is TikTok's official event for e-commerce purchases
-      window.ttq.track('CompletePayment', {
-        content_id: 'magnesium-complex',
+      const payload = {
+        contents: [
+          {
+            content_id: sku,
+            content_type: 'product',
+            content_name: packageName || 'Magnesium Complex',
+            quantity: quantity,
+            price: Number(price) || 0,
+          },
+        ],
+        content_id: sku,
         content_type: 'product',
         content_name: packageName || 'Magnesium Complex',
         quantity: quantity,
@@ -135,19 +182,13 @@ export function trackTikTokPurchase(orderNumber: string, packageName: string, pr
         value: Number(price) || 0,
         currency: 'MAD',
         order_id: orderNumber,
-      });
+      };
+
+      // CompletePayment is TikTok's official event for e-commerce purchases
+      window.ttq.track('CompletePayment', payload);
 
       // Also send PlaceAnOrder for maximum compatibility across TikTok campaign optimization types
-      window.ttq.track('PlaceAnOrder', {
-        content_id: 'magnesium-complex',
-        content_type: 'product',
-        content_name: packageName || 'Magnesium Complex',
-        quantity: quantity,
-        price: Number(price) || 0,
-        value: Number(price) || 0,
-        currency: 'MAD',
-        order_id: orderNumber,
-      });
+      window.ttq.track('PlaceAnOrder', payload);
     } catch (err) {
       console.warn('TikTok CompletePayment tracking error:', err);
     }
