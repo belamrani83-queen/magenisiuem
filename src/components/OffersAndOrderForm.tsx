@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, CheckCircle2, ShieldCheck, Truck, Gift, Star, MessageCircle, AlertCircle, Clock, Award, Lock, Flame } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShoppingBag, CheckCircle2, ShieldCheck, Truck, Gift, Star, MessageCircle, AlertCircle, Clock, Award, Lock } from 'lucide-react';
 import { PACKAGE_OFFERS, MOROCCAN_CITIES } from '../data/content';
 import { PackageOffer } from '../types';
 import { submitCustomerOrder } from '../lib/orderService';
@@ -25,29 +25,6 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Live countdown timer (3 hours, 42 mins, 18 secs)
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 3,
-    minutes: 42,
-    seconds: 18,
-  });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        }
-        return { hours: 2, minutes: 59, seconds: 59 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const selectedOffer = PACKAGE_OFFERS.find((p) => p.id === selectedPackId) || PACKAGE_OFFERS[1];
 
@@ -130,39 +107,14 @@ export const OffersAndOrderForm: React.FC<OffersAndOrderFormProps> = ({
             التوصيل بالمجان إلى باب بيتك فجميع مدن وقرى المغرب. الدفع عند الاستلام.
           </p>
 
-          {/* Urgent Countdown Timer & Stock Bar */}
-          <div className="mt-6 max-w-lg mx-auto bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-rose-700 font-black text-xs sm:text-sm">
-                <Flame className="w-5 h-5 text-rose-600 animate-bounce" />
-                <span>ينتهي العرض الترويجي اليوم بعد:</span>
-              </div>
-
-              {/* Digits */}
-              <div className="flex items-center gap-1.5 dir-ltr font-mono text-xs sm:text-sm font-black">
-                <div className="bg-slate-900 text-white px-2.5 py-1.5 rounded-lg shadow-inner min-w-[34px] text-center">
-                  {String(timeLeft.hours).padStart(2, '0')}
-                </div>
-                <span className="text-slate-900 font-bold">:</span>
-                <div className="bg-slate-900 text-white px-2.5 py-1.5 rounded-lg shadow-inner min-w-[34px] text-center">
-                  {String(timeLeft.minutes).padStart(2, '0')}
-                </div>
-                <span className="text-slate-900 font-bold">:</span>
-                <div className="bg-rose-600 text-white px-2.5 py-1.5 rounded-lg shadow-inner min-w-[34px] text-center animate-pulse">
-                  {String(timeLeft.seconds).padStart(2, '0')}
-                </div>
-              </div>
+          {/* Stock Availability Bar */}
+          <div className="mt-6 max-w-lg mx-auto bg-amber-50/80 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-xs">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-800 mb-2">
+              <span>المتبقي في المخزون بسعر اليوم الترويجي:</span>
+              <span className="text-rose-600 font-black">11 علبة فقط ⚠️</span>
             </div>
-
-            {/* Stock Scarcity Bar */}
-            <div className="mt-3 pt-3 border-t border-amber-200/80">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
-                <span>المتبقي في المخزون بسعر اليوم:</span>
-                <span className="text-rose-600 font-black">11 علبة فقط ⚠️</span>
-              </div>
-              <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-amber-500 to-rose-600 rounded-full w-[82%]"></div>
-              </div>
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-amber-500 to-rose-600 rounded-full w-[82%]"></div>
             </div>
           </div>
         </div>
